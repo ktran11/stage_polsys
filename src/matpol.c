@@ -91,7 +91,7 @@ fmpz_mat_t *degree_matrix(nmod_poly_mat_t mat, fmpz *shifts, bool row_wise)
 	  {
 	    P = nmod_poly_mat_entry(mat, i, j);
 	    d = nmod_poly_degree(P) + shifts[j];
-	    D[i,j] = d
+	    D[i,j] = d;
 	  }
       return D;
     }
@@ -122,11 +122,11 @@ bool is_constant(nmod_poly_mat_t mat)
   return true;
  
 }
-
+/*
 nmod_mat_t *leading_matrix(nmod_poly_mat_t mat, fmpz *shifts, bool row_wise)
 {
   
-}
+}*/
 
 fmpz *leading_positions(nmod_poly_mat_t mat, fmpz *shifts, bool row_wise)
 {
@@ -197,7 +197,7 @@ int main(void)
   flint_randinit(seed);
   nmod_poly_mat_randtest(A, seed, 5);
   char *x = malloc(150);
-  nmod_poly_mat_print(A,x);
+  nmod_poly_mat_print(A, x);
 
   nmod_mat_t B;
   nmod_mat_init(B, 3, 3, 4);
