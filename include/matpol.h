@@ -1,36 +1,43 @@
 #ifndef MATPOL_H
 #define MATPOL_H
 
-#include <stdbool.h>
+#include <stdint.h>
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
-#include <fmpz.h>
-#include <fmpz_mat.h>
-#include <flint.h>
+
+
+typedef enum
+  {
+    COLUMN_WISE = 0,
+    ROW_WISE = 1
+
+  } matrix_wise; 
+
 
 
 void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree);
 
+void column_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts);
 
-fmpz *column_degrees(nmod_poly_mat_t mat, fmpz *shifts);
+void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts);
 
-fmpz *row_degrees(nmod_poly_mat_t mat, fmpz *shifts);
+slong nmod_poly_mat_degree(const nmod_poly_mat_t mat);
 
-int degree(nmod_poly_mat_t mat);
+void degree_matrix(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
+			  matrix_wise row_wise);
 
-fmpz_mat_t *degree_matrix(nmod_poly_mat_t mat, fmpz *shifts, bool row_wise);
+int is_hermite(const nmod_poly_mat_t mat, matrix_wise row_wise);
 
-bool is_constant(nmod_poly_mat_t mat);
+int is_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered);
 
-nmod_poly_mat_t *leading_matrix(nmod_poly_mat_t mat, fmpz *shifts, bool row_wise);
+int is_reduced(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise);
 
-fmpz *leading_positions(nmod_poly_mat_t mat, fmpz *shifts, bool row_wise);
+int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered);
 
-nmod_poly_mat_t *reverse(nmod_poly_mat_t mat, bool row_wise);
+void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, uint64_t *shifts,
+				matrix_wise row_wise);
 
-nmod_poly_mat_t *shift(nmod_poly_mat_t mat, bool row_wise);
-
-nmod_poly_mat_t *truncate(nmod_poly_mat_t mat, int degree, bool row_wise);
-
+void leading_positions(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
+			matrix_wise row_wise);
 
 #endif /* MATPOL_H */
