@@ -7,11 +7,11 @@
 
 
 typedef enum
-  {
+{
     COLUMN_WISE = 0,
     ROW_WISE = 1
 
-  } matrix_wise; 
+} matrix_wise; 
 
 
 
@@ -24,7 +24,7 @@ void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts);
 slong nmod_poly_mat_degree(const nmod_poly_mat_t mat);
 
 void degree_matrix(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
-			  matrix_wise row_wise);
+                   matrix_wise row_wise);
 
 int is_hermite(const nmod_poly_mat_t mat, matrix_wise row_wise);
 
@@ -35,9 +35,12 @@ int is_reduced(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise
 int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered);
 
 void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, uint64_t *shifts,
-				matrix_wise row_wise);
+                    matrix_wise row_wise);
 
 void leading_positions(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
-			matrix_wise row_wise);
+                       matrix_wise row_wise);
 
 #endif /* MATPOL_H */
+
+/* -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+// vim:sts=4:sw=4:ts=4:et:sr:cino=>s,f0,{0,g0,(0,\:0,t0,+0,=s
