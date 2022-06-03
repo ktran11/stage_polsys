@@ -16,7 +16,7 @@ void column_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
 {
     // test len(res) == cols and len(shifts) == rows
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_t *P;
+    nmod_poly_struct *P;
     slong max, d;
     for (slong i = 0; i < cols; i++)
     {
@@ -36,7 +36,7 @@ void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
 {
     // test len(res) == rows and len(shifts) == cols 
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_t *P;
+    nmod_poly_struct *P;
     slong max, d;
     for (slong i = 0; i < rows; i++)
     {
@@ -55,7 +55,7 @@ void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
 slong nmod_poly_mat_degree(const nmod_poly_mat_t mat)
 {
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_t *P;
+    nmod_poly_struct *P;
     slong d, deg = 0;
     for(slong i = 0; i < rows; i++)
         for(slong j = 0; j < cols; j++)
@@ -75,7 +75,7 @@ void degree_matrix(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
 {
     //test len(res) == rows and len(res[0]) == cols
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_t *P;
+    nmod_poly_struct *P;
     slong d;
 
     if (row_wise)
@@ -106,7 +106,7 @@ void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat,
                     uint64_t *shifts, matrix_wise row_wise)
 {
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_t *P;
+    nmod_poly_struct *P;
     if (row_wise)
     {
         uint64_t rdeg[rows];
@@ -136,7 +136,7 @@ void leading_positions(uint64_t *res, const nmod_poly_mat_t mat,
 {
     // test len(res) == rows if row_wise == ROW_WISE or len(res) == COLUMN_WISE otherwise
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_t *P;
+    nmod_poly_struct *P;
     slong max;
     slong d;
     uint64_t ind; 
@@ -178,7 +178,7 @@ void leading_positions(uint64_t *res, const nmod_poly_mat_t mat,
     }
 }
 
-static void print_vect_uint64(const uint64_t *vect, size_t len)
+static void print_vect_uint64(const uint64_t *vect, slong len)
 {
     if (!vect)
         return;
@@ -188,7 +188,7 @@ static void print_vect_uint64(const uint64_t *vect, size_t len)
     return;
 }
 
-static void print_mat_uint64(const uint64_t *mat, size_t rows, size_t cols)
+static void print_mat_uint64(const uint64_t *mat, slong rows, slong cols)
 {
     if (!mat)
         return;
@@ -201,6 +201,7 @@ static void print_mat_uint64(const uint64_t *mat, size_t rows, size_t cols)
     return;
 }
 
+/**
 static void reverse(int arr[], int n)
 {
     for (int low = 0, high = n - 1; low < high; low++, high--)
@@ -210,6 +211,7 @@ static void reverse(int arr[], int n)
         arr[high] = temp;
     }
 }
+**/
 
 int is_hermite(const nmod_poly_mat_t mat, matrix_wise row_wise)
 {
@@ -236,7 +238,7 @@ int is_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, 
     if (!is_weak_popov(mat, shifts, row_wise, ordered))
         return 0;
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat), pivot_deg, d;
-    nmod_poly_t *P, *pivot;
+    nmod_poly_struct *P, *pivot;
 
     if (row_wise)
     {
@@ -246,10 +248,10 @@ int is_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, 
         for(slong i = 0; i < rows; i++)
         {
             pivot = nmod_poly_mat_entry(mat, i, lead_pos[i]);
-
+	    pivot_deg = nmod_poly_degree(pivot);
             if (nmod_poly_get_coeff_ui(pivot, nmod_poly_degree(pivot)) != 1)
                 return 0;
-            for(slong j = i + 1; j < rows ; j++)
+            for(slong j = 0; j < rows ; j++)
             {
                 P = nmod_poly_mat_entry(mat, j, lead_pos[i]);
                 d = nmod_poly_degree(P);
@@ -266,9 +268,10 @@ int is_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, 
     for(slong i = 0; i < cols; i++)
     {
         pivot = nmod_poly_mat_entry(mat, lead_pos[i], i);
-        if (nmod_poly_get_coeff_ui(pivot, nmod_poly_degree(pivot)) != 1)
+	pivot_deg = nmod_poly_degree(pivot);
+	if (nmod_poly_get_coeff_ui(pivot, nmod_poly_degree(pivot)) != 1)
             return 0;
-        for(slong j = i + 1; j < cols ; j++)
+        for(slong j = 0; j < cols ; j++)
         {
             P = nmod_poly_mat_entry(mat, lead_pos[i], j);
             d = nmod_poly_degree(P);
@@ -358,9 +361,9 @@ int main(void)
     printf("shifts: ");
     print_vect_uint64(shifts, cols);
 
-    uint64_t *cols_deg[cols];
+    uint64_t cols_deg[cols];
     column_degrees(cols_deg, A, shifts);
-    uint64_t *rows_deg[rows];
+    uint64_t rows_deg[rows];
     row_degrees(rows_deg, A, shifts);
 
     printf("column degree of A with shift \n");
