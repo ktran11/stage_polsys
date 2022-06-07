@@ -1,0 +1,12 @@
+#include "pm_basis.h"
+#include "matpol.h"
+
+
+int main(void)
+{
+  slong *p = _perm_init(5);
+  _perm_set_one(p, 5);
+  _perm_print(p, 5);
+  _perm_clear(p);
+  return EXIT_SUCCESS;
+}

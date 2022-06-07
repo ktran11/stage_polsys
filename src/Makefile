@@ -2,16 +2,22 @@ CFLAGS = -std=c11 -Wall -Wextra
 CPPFLAGS = -I/usr/local/include/flint -I/usr/local/include/ -I../include
 LDFLAGS = -L/usr/local/lib -lflint -lgmp -lmpfr -lpthread
 
-all: matpol
+all: matpol pm_basis
 
 matpol: matpol.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+pm_basis: pm_basis.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 matpol.o: matpol.c 
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
 
+pm_basis.o: pm_basis.c
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
+
 clean:
-	@rm -f *~ *.o matpol
+	@rm -f *~ *.o matpol pm_basis
 
 help:
 	@echo "Usage:"
