@@ -10,6 +10,8 @@ typedef struct
   slong ord;
 } int_tuple;
 
+////////////////// Permutation from sorting vector //////////////////////////
+
 /* Parameter for quicksort */
 static int compare(const void *a, const void *b)
 {
@@ -44,6 +46,8 @@ static void sort_and_create_perm(slong *perm, const int64_t *vec, slong n)
 }
 
 
+//////////// Permutation on columns of Poly Matrix or rows Matrix or Vector //////////////////////
+
 /**
  * \brief A function fund in the doc of nmod_mat_t
  *
@@ -70,7 +74,6 @@ static void nmod_poly_mat_swap_cols(nmod_poly_mat_t mat, slong * perm, slong r, 
     }
 }
 
-
 /**
  * \brief Do the multiplication permutation matrix (P*A) for the function Basis
  *
@@ -78,18 +81,6 @@ static void nmod_poly_mat_swap_cols(nmod_poly_mat_t mat, slong * perm, slong r, 
  * \param P, the permutation 
  * \param n, length of P and row dimension of A
 */
-static void apply_perm_cols_to_poly_matrix(nmod_poly_mat_t A, const slong *P, slong n)
-{
-  slong *P_copy = _perm_init(n); 
-  _perm_set(P_copy, P, n);  
-  for (slong i = 0; i < n; i++)
-    for (slong j = 0; j < n; j++)
-      {
-	if (i == P_copy[i])
-	  break;
-	nmod_poly_mat_swap_cols(A, P_copy, i, P_copy[i]);
-      }
-}
 static void apply_perm_rows_to_matrix(nmod_mat_t A, const slong *P, slong n)
 {
   slong *P_copy = _perm_init(n); 
@@ -103,11 +94,28 @@ static void apply_perm_rows_to_matrix(nmod_mat_t A, const slong *P, slong n)
       }
 }
 
+static void apply_perm_cols_to_poly_matrix(nmod_poly_mat_t A, const slong *P, slong n)
+{
+  slong *P_copy = _perm_init(n); 
+  _perm_set(P_copy, P, n);  
+  for (slong i = 0; i < n; i++)
+    for (slong j = 0; j < n; j++)
+      {
+	if (i == P_copy[i])
+	  break;
+	nmod_poly_mat_swap_cols(A, P_copy, i, P_copy[i]);
+      }
+}
+
+
 static void apply_perm_to_vector(int64_t *res, int64_t *vec,const slong *P, slong n)
 {
   for (slong i = 0; i < n; i++)
     res[P[i]] = vec[i];
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void Basis(nmod_poly_mat_t res, int64_t *res_shift, nmod_mat_t mat, int64_t *shift,
 	   slong rdim, slong cdim, slong prime)
