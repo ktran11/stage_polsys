@@ -48,9 +48,8 @@ def LSP(A):
             S.swap_columns(pivIndex,pivot)
             P.swap_rows(pivIndex,pivot)
             for k in range(i+1,m):
-                cstFactor = S[k,pivIndex]/S[i,pivIndex]
-                S.add_multiple_of_row(k,i,-cstFactor)
-                L[:,i:] = L[:,i:].with_added_multiple_of_row(k,i,cstFactor)
+                L[k,i] = S[k,pivIndex]/S[i,pivIndex]
+                S.add_multiple_of_row(k,i,-L[k,i])
             pivIndex += 1
     return L,S,P,nonzRows
 
