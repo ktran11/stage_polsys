@@ -10,6 +10,8 @@ typedef struct
   slong ord;
 } int_tuple;
 
+////////////////// Permutation from sorting vector //////////////////////////
+
 /* Parameter for quicksort */
 static int compare(const void *a, const void *b)
 {
@@ -43,95 +45,32 @@ static void sort_and_create_perm(slong *perm, const int64_t *vec, slong n)
     }
 }
 
-
-/**
- * \brief A function fund in the doc of nmod_mat_t
- *
- */
-static void nmod_poly_mat_swap_cols(nmod_poly_mat_t mat, slong * perm, slong r, slong s)
-{
-  if (r != s && !nmod_poly_mat_is_empty(mat))
-    {
-        slong t;
-
-        if (perm)
-        {
-            t = perm[s];
-            perm[s] = perm[r];
-            perm[r] = t;
-        }
-
-        for (t = 0; t < mat->r; t++)
-        {
-	  nmod_poly_struct c = mat->rows[t][r];
-	  mat->rows[t][r] = mat->rows[t][s];
-	  mat->rows[t][s] = c;
-        }
-    }
-}
-
-
-/**
- * \brief Do the multiplication permutation matrix (P*A) for the function Basis
- *
- * \param A, the input and result matrix
- * \param P, the permutation 
- * \param n, length of P and row dimension of A
-*/
-static void apply_perm_cols_to_poly_matrix(nmod_poly_mat_t A, const slong *P, slong n)
-{
-  slong *P_copy = _perm_init(n); 
-  _perm_set(P_copy, P, n);  
-  for (slong i = 0; i < n; i++)
-    for (slong j = 0; j < n; j++)
-      {
-	if (i == P_copy[i])
-	  break;
-	nmod_poly_mat_swap_cols(A, P_copy, i, P_copy[i]);
-      }
-}
-static void apply_perm_rows_to_matrix(nmod_mat_t A, const slong *P, slong n)
-{
-  slong *P_copy = _perm_init(n); 
-  _perm_set(P_copy, P, n);
-  for (slong i = 0; i < n; i++)
-    for (slong j = 0; j < n; j++)
-      {
-	if (i == P_copy[i])
-	  break;
-	nmod_mat_swap_rows(A, P_copy, i, P_copy[i]);
-      }
-}
-
-static void apply_perm_to_vector(int64_t *res, int64_t *vec,const slong *P, slong n)
-{
-  for (slong i = 0; i < n; i++)
-    res[P[i]] = vec[i];
-}
-
-void Basis(nmod_poly_mat_t res, int64_t *res_shift, nmod_mat_t mat, int64_t *shift,
+void Basis(nmod_poly_mat_t res, int64_t *res_shifts,
+	   const nmod_mat_t mat, const int64_t *shifts,
 	   slong rdim, slong cdim, slong prime)
 {
 
-  slong rank, *P, *P_inv, *perm_inv, *comp, *perm = _perm_init(rdim);
-  nmod_mat_t G, Lr, Lr_inv, prod_G_Lr_inv;
+  slong rank, *P, *P_inv, *comp, *comp_inv, *perm = _perm_init(rdim);
+  nmod_mat_t G, Lr, Lr_inv, prod_G_Lr_inv, mat_cp;
   nmod_poly_t One, constant;
 
-  sort_and_create_perm(perm, shift, rdim);
+  sort_and_create_perm(perm, shifts, rdim);
 
   /* LU operation on pi*mat and extraction  L = [ [Lr, 0], [G, I] ] */
 
-  apply_perm_rows_to_matrix(mat, perm, rdim);
+  nmod_mat_init_set(mat_cp, mat);
+
+  apply_perm_rows_to_matrix(mat_cp, perm, rdim);
   P = _perm_init(rdim);
-  rank = nmod_mat_lu(P, mat, 0);
+  rank = nmod_mat_lu(P, mat_cp, 0);
   
   nmod_mat_init(Lr, rank, rank, prime);
   nmod_mat_one(Lr);
   for(slong i = 1; i < rank; i++)
     for(slong j = 0; j < i; j++)
-      nmod_mat_set_entry(Lr, i, j, nmod_mat_entry(mat, i, j));
+      nmod_mat_set_entry(Lr, i, j, nmod_mat_entry(mat_cp, i, j));
 
-  nmod_mat_window_init(G, mat, rank, 0, rdim, cdim);
+  nmod_mat_window_init(G, mat_cp, rank, 0, rdim, cdim);
 
   /* Computation of -G*Lr^(-1) */
   nmod_mat_init(Lr_inv, rank, rank, prime);
@@ -146,11 +85,12 @@ void Basis(nmod_poly_mat_t res, int64_t *res_shift, nmod_mat_t mat, int64_t *shi
   nmod_mat_neg(prod_G_Lr_inv, prod_G_Lr_inv);
   
   nmod_mat_clear(Lr_inv);
-  nmod_mat_clear(G);
+  nmod_mat_window_clear(G);
 
   /* Computation of the block matrix  [ [xIr, 0], [-G*Lr^(-1), I_{rdim - rank}] ] */
-  // We suppose res set at [0]_{rdim x rdim}
 
+  nmod_poly_mat_zero(res);
+  
   nmod_poly_init(One, prime);
   nmod_poly_set_coeff_ui(One, 0, 1); // 1
   
@@ -173,45 +113,128 @@ void Basis(nmod_poly_mat_t res, int64_t *res_shift, nmod_mat_t mat, int64_t *shi
 	nmod_poly_set(nmod_poly_mat_entry(res, i + rank, j), constant); 
       }
   
+  nmod_poly_clear(constant);
+
   nmod_mat_clear(prod_G_Lr_inv);
 
   /* Multiply by the permutations */
 
   P_inv = _perm_init(rdim);
-  perm_inv = _perm_init(rdim);
   comp = _perm_init(rdim);
+  comp_inv = _perm_init(rdim);
   
-  _perm_inv(perm_inv, perm, rdim);
   _perm_inv(P_inv, P, rdim);
   
   _perm_compose(comp, P_inv, perm, rdim);
 
+  _perm_inv(comp_inv, comp, rdim);
+  
   _perm_clear(perm);
   _perm_clear(P);
-  _perm_clear(perm_inv);
   _perm_clear(P_inv);
   
   apply_perm_cols_to_poly_matrix(res, comp, rdim);
-
+  apply_perm_rows_to_poly_matrix(res, comp_inv, rdim);
+  
   /* Compute shift */
-  apply_perm_to_vector(res_shift, shift, comp, rdim);
+  apply_perm_to_vector(res_shifts, shifts, comp, rdim);
 
+  _perm_clear(comp);
+  
   for (slong i = 0; i < rank; i++)
-    res_shift[i] += 1;
-}   
+    res_shifts[i] += 1;
+
+  apply_perm_to_vector(res_shifts, res_shifts, comp_inv, rdim);
+
+  _perm_clear(comp_inv);
+}
+
+
+slong Basis_for_M_basis(nmod_mat_t res, int64_t *res_shifts, slong *res_perm,
+		       const nmod_mat_t mat, const int64_t *shifts,
+			slong rdim, slong cdim, slong prime)
+{
+  if (res != NULL)
+    nmod_mat_clear(res);
+
+  slong rank = 0, *P, *P_inv, *comp_inv, *perm = _perm_init(rdim);
+  nmod_mat_t G, Lr, Lr_inv, mat_cp;
+
+  sort_and_create_perm(perm, shifts, rdim);
+
+  nmod_mat_init_set(mat_cp, mat);
+
+  /* LU operation on pi*mat and extraction  L = [ [Lr, 0], [G, I] ] */
+
+  apply_perm_rows_to_matrix(mat_cp, perm, rdim);
+  P = _perm_init(rdim);
+  rank = nmod_mat_lu(P, mat_cp, 0);
+
+  nmod_mat_init(Lr, rank, rank, prime);
+  nmod_mat_one(Lr);
+  for(slong i = 1; i < rank; i++)
+    for(slong j = 0; j < i; j++)
+      nmod_mat_set_entry(Lr, i, j, nmod_mat_entry(mat_cp, i, j));
+
+  nmod_mat_window_init(G, mat_cp, rank, 0, rdim, cdim);
+
+  /* Computation of -G*Lr^(-1) */
+  nmod_mat_init(Lr_inv, rank, rank, prime);
+  nmod_mat_inv(Lr_inv, Lr); // inv can be improved with op in tril
+
+  nmod_mat_clear(Lr);
+
+  nmod_mat_init(res, rdim - rank, rank, prime); 
+  nmod_mat_mul(res, G, Lr_inv);
+  // can be improved with choice of algorithm (default = Strassen) and multithread
+  
+  nmod_mat_neg(res, res);
+
+  nmod_mat_clear(Lr_inv);
+  nmod_mat_clear(G);
+
+
+  /* Multiply by the permutations */
+
+  P_inv = _perm_init(rdim);  
+  _perm_inv(P_inv, P, rdim);
+  
+  _perm_compose(res_perm, P_inv, perm, rdim);
+  
+  
+  _perm_clear(perm);
+  _perm_clear(P);
+  _perm_clear(P_inv);
+  /* Compute shift */  
+  apply_perm_to_vector(res_shifts, shifts, res_perm, rdim);
+  
+  for (slong i = 0; i < rank; i++)
+    res_shifts[i] += 1;
+
+  comp_inv = _perm_init(rdim);
+  _perm_inv(comp_inv, res_perm, rdim);
+  apply_perm_to_vector(res_shifts, res_shifts, comp_inv, rdim);
+
+  _perm_clear(comp_inv);
+  return rank;
+}
+
+
 
 int main(void)
 {
-  nmod_mat_t mat;
-  slong rdim = 8, cdim = 5, prime = 13;
+  nmod_mat_t mat, copy_mat;
+  slong rdim = 9, cdim = 3, prime = 7;
 
-  /** random matrix **/
+  nmod_mat_init(mat, rdim, cdim, prime);
+
+   
   flint_rand_t state;
   flint_randinit(state);
 
-  nmod_mat_init(mat, rdim, cdim, prime);
   nmod_mat_randtest(mat, state);
-
+  nmod_mat_init_set(copy_mat, mat);
+  
   nmod_poly_mat_t res; 
   nmod_poly_mat_init(res, rdim, rdim, prime);
   nmod_poly_mat_zero(res);
@@ -219,9 +242,10 @@ int main(void)
   int64_t res_shift[rdim];
 
   int64_t shift[rdim];
-  for (slong i = 0; i < rdim; i++)
-    shift[i] = -i;
 
+  for (int64_t i = 0; i < rdim; i++)
+    shift[i] = i;
+  
   printf("Matrix M \n");
   nmod_mat_print_pretty(mat);
   
@@ -236,6 +260,38 @@ int main(void)
     printf("%ld ", res_shift[i]);
   
   nmod_poly_mat_clear(res);
+
+  nmod_mat_print_pretty(copy_mat);
+  
+  nmod_mat_t res2;
+  int64_t res_shift2[rdim];
+  slong res_perm2[rdim];
+  slong rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift, rdim, cdim, prime);
+
+  nmod_mat_print_pretty(res2);
+
+  nmod_mat_clear(res2);
+
+  nmod_mat_randtest(mat,state);
+
+  printf("\nnew_mat\n");
+  nmod_mat_print_pretty(mat);
+  rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift, rdim, cdim, prime);
+
+  printf("new_res2\n");
+  nmod_mat_print_pretty(res2);
+  
+  printf("\nshifts = ");
+  for(slong i = 0; i < rdim; i++)
+    printf("%ld ", res_shift2[i]);
+
+  printf("\npermutation = ");
+  for(slong i = 0; i < rdim; i++)
+    printf("%ld ", res_perm2[i]);
+  
+
+  printf("\nrank = %ld\n", rank);
+  nmod_mat_clear(res2);
   
   /**
   rank = nmod_mat_lu(P, mat, 0);
@@ -276,8 +332,7 @@ int main(void)
   _perm_print(p, rdim);
   _perm_clear(p);
   */
-
   nmod_mat_clear(mat);
   flint_randclear(state);
-  return EXIT_SUCCESS;
+  return 0;
 }
