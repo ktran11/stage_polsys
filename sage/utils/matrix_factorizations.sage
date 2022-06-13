@@ -1,11 +1,12 @@
 def LSP(A):
     # input: matrix A over a field.
-    # returns L,S,P,nzRows such that A = L S P is
-    #the LSP decomposition of A. nzRows gives the
-    #indices of nonzero rows in S.
+    # returns L,S,P,rrp such that A = L S P is
+    # the LSP decomposition of A. rrp gives the
+    # indices of nonzero rows in S, which is also
+    # the row rank profile of A.
     m = A.nrows()
     n = A.ncols()
-    nzRows = []
+    rrp = []
     pivIndex = 0
     L = Matrix.identity(A.base_ring(),m,m)
     S = copy(A)
@@ -16,7 +17,7 @@ def LSP(A):
         while (pivot < n and S[i,pivot] == 0):
             pivot += 1
         if pivot < n:
-            nzRows.append(i)
+            rrp.append(i)
             S.swap_columns(pivIndex,pivot)
             # simulate P.swap_rows(pivIndex,pivot)
             tmp = P[pivIndex]
@@ -26,18 +27,23 @@ def LSP(A):
                 L[k,i] = S[k,pivIndex]/S[i,pivIndex]
                 S.add_multiple_of_row(k,i,-L[k,i])
             pivIndex += 1
-    return L,S,P,nzRows
+    return L,S,P,rrp
 
 
+## TODO : compute rank profile matrix and check whether preserved by this LSP
+## TODO : make refined version with more compact storage of L&S
+## TODO : deduce nullspace from LSP
+## TODO : find out how this differs from Crout-based PLUQ (Algo 1 in DPS15)
 
 def LiSP(A):
     # input: matrix A over a field.
-    # returns L,S,P,nzRows such that A = L^-1 S P is
-    #the LSP decomposition of A. nzRows gives the
-    #indices of nonzero rows in S.
+    # returns L,S,P,rrp such that A = L^-1 S P is
+    #the LSP decomposition of A. rrp gives the
+    #indices of nonzero rows in S, which is also
+    # the row rank profile of A.
     m = A.nrows()
     n = A.ncols()
-    nzRows = []
+    rrp = []
     pivIndex = 0
     L = Matrix.identity(A.base_ring(),m,m)
     S = copy(A)
@@ -48,7 +54,7 @@ def LiSP(A):
         while (pivot < n and S[i,pivot] == 0):
             pivot += 1
         if pivot < n:
-            nzRows.append(i)
+            rrp.append(i)
             S.swap_columns(pivIndex,pivot)
             P.swap_rows(pivIndex,pivot)
             for k in range(i+1,m):
@@ -56,18 +62,19 @@ def LiSP(A):
                 S.add_multiple_of_row(k,i,cstFactor)
                 L.add_multiple_of_row(k,i,cstFactor)
             pivIndex += 1
-    return L,S,P,nzRows
+    return L,S,P,rrp
 
 def LiSP_compact(A):
     # input: matrix A over a field.
-    # returns L,S,P,nzRows such that A = L^-1 S P is
-    #the LSP decomposition of A. nzRows gives the
-    #indices of nonzero rows in S.
+    # returns L,S,P,rrp such that A = L^-1 S P is
+    #the LSP decomposition of A. rrp gives the
+    #indices of nonzero rows in S, which is also
+    # the row rank profile of A.
     # Representation is compact: L and S are merged
     # TODO work in progress!
     m = A.nrows()
     n = A.ncols()
-    nzRows = []
+    rrp = []
     pivIndex = 0
     L = Matrix.identity(A.base_ring(),m,m)
     S = copy(A)
@@ -78,7 +85,7 @@ def LiSP_compact(A):
         while (pivot < n and S[i,pivot] == 0):
             pivot += 1
         if pivot < n:
-            nzRows.append(i)
+            rrp.append(i)
             S.swap_columns(pivIndex,pivot)
             # simulate P.swap_rows(pivIndex,pivot)
             tmp = P[pivIndex]
@@ -89,7 +96,7 @@ def LiSP_compact(A):
                 S.add_multiple_of_row(k,i,cstFactor)
                 L.add_multiple_of_row(k,i,cstFactor)
             pivIndex += 1
-    return (L,S,P,nzRows)
+    return (L,S,P,rrp)
 
 def expand_LSP(L,S,P,nz):
     return L, S, Permutation(P).inverse().to_matrix(), nz
