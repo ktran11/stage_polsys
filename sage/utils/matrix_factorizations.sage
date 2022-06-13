@@ -1,4 +1,4 @@
-def LSP(A):
+def LiSP(A):
     # input: matrix A over a field.
     # returns L,S,P,nonzRows such that A = L^-1 S P is
     #the LSP decomposition of A. nonzRows gives the
@@ -26,11 +26,13 @@ def LSP(A):
             pivIndex += 1
     return L,S,P,nonzRows
 
-def LSP_compact(A):
+def LiSP_compact(A):
     # input: matrix A over a field.
     # returns L,S,P,nonzRows such that A = L^-1 S P is
     #the LSP decomposition of A. nonzRows gives the
     #indices of nonzero rows in S.
+    # Representation is compact: L and S are merged
+    # TODO work in progress!
     m = A.nrows()
     n = A.ncols()
     nonzRows = []
