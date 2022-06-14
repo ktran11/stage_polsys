@@ -1,5 +1,4 @@
-## TODO : make refined version with more compact storage of L&S and of kernel
-## TODO : find out how this differs from Crout-based PLUQ (Algo 1 in DPS15)
+## TODO : try Crout-based PLUQ (Algo 1 in DPS15) ??
 
 #######################################
 #  LSP factorization and left kernel  #
@@ -40,7 +39,7 @@ def LSP(A):
             pivIndex += 1
     return L,S,P,rrp,nrrp
 
-def left_kernel(A):
+def LSP_to_left_kernel(A):
     # input: matrix A over a field
     # returns: matrix K, basis of left kernel of A in reduced row echelon form
     # (with pivots = rightmost nonzero entries)
@@ -93,44 +92,6 @@ def LiSP(A):
 #          (compact storage)           #
 ########################################
 
-def column_rotation(A,cstart,cend,C=None):
-    # columns 0, ..., cstart, .., cend-1, ..., n-1
-    # are permuted into
-    # columns 0, ..., cstart-1, cstart+1, .., cend-1, cstart, cend, ..., n-1
-    # If a list C (of length n) is given, it is also
-    # permuted accordingly
-    n = A.ncols()
-    perm_list = list(range(cstart)) + list(range(cstart+1,cend)) + [cstart] + list(range(cend,n))
-    perm = Permutation([i+1 for i in perm_list]).inverse()
-    A.permute_columns(perm)
-    if C != None:
-        return perm.action(C)
-
-def row_rotation(A,rstart,cstart,row,R):
-    # rows 0, ..., row, ..., m-1
-    # are permuted into
-    # rows 0, ..., row-1, row+1, ..., m-1, row
-    # working on window A[rstart:,cstart:]
-    # If a list R (of length m) is given, it is also
-    # permuted accordingly
-    m = A.nrows()
-    perm = Permutation([i+1 for i in range(m) if i != row] + [row+1])
-    A.permute_rows(perm)
-    return perm.action(R)
-
-def row_transposition(A,rstart,cstart,src,tgt,R):
-    # rows 0, ..., src, ..., tgt, ..., m-1
-    # are permuted into
-    # rows 0, ..., tgt, src+1 ..., tgt-1, src, tgt+1, ... m-1
-    # working on window A[rstart:,cstart:]
-    # If a list R (of length m) is given, it is also
-    # permuted accordingly
-    A[rstart:,cstart:] = A[rstart:,cstart:].with_swapped_rows(src-rstart,tgt-cstart)
-    tmp = R[src]
-    R[src] = R[tgt]
-    R[tgt] = tmp
-    return R
-
 def PLUQ(A):
     ## input: matrix A over a field, dimensions m x n.
     # returns LU,P,Q,rank such that 
@@ -160,12 +121,14 @@ def PLUQ(A):
             pivot += 1
         if pivot == n:
             #print(f"---rank{rank}--nullity---\n{LU}\n")
-            P = row_rotation(LU,rank,rank,rank,P)
+            P = row_rotation(LU,rank,P)
+            #P = row_transposition(LU,rank,m-1-nullity,P)
             #print(f"---rank{rank}--nullity---\n{LU}\n")
             nullity += 1
         else:
             #print(f"---rank{rank}--rank---\n{LU}\n")
-            Q = column_rotation(LU,rank,pivot+1,Q)
+            #Q = column_rotation(LU,rank,pivot+1,Q)
+            Q = column_transposition(LU,rank,pivot,Q)
             for k in range(rank+1,m):
                 LU[k,rank] = LU[k,rank]/LU[rank,rank]
                 for j in range(rank+1,n):
@@ -174,7 +137,73 @@ def PLUQ(A):
             rank += 1
     return LU,P,Q,rank
 
+def PLUQ_to_left_kernel(A):
+    # input: matrix A over a field
+    # returns: matrix K, basis of left kernel of A in reduced row echelon form
+    # (with pivots = rightmost nonzero entries)
+    m,n = A.dimensions()
+    LU,P,Q,rank = PLUQ(A)
+    for i in range(rank):
+        LU[i,i] = 1
+        for j in range(i+1,n):
+            LU[i,j] = 0
+    K = - LU[rank:,:rank] * LU[:rank,:rank].inverse()
+    return K,P[:rank],P[rank:]
+
+
+###########
+#  Utils  #
+###########
+
+def column_rotation(A,cstart,cend,C):
+    # columns 0, ..., cstart, .., cend-1, ..., n-1
+    # are permuted into
+    # columns 0, ..., cstart-1, cstart+1, .., cend-1, cstart, cend, ..., n-1
+    # If a list C (of length n) is given, it is also
+    # permuted accordingly
+    n = A.ncols()
+    perm_list = list(range(cstart)) + list(range(cstart+1,cend)) + [cstart] + list(range(cend,n))
+    perm = Permutation([i+1 for i in perm_list]).inverse()
+    A.permute_columns(perm)
+    return perm.action(C)
+
+def column_transposition(A,src,tgt,C):
+    # columns 0, ..., src, ..., tgt, ..., n-1
+    # are permuted into
+    # columns 0, ..., tgt, src+1 ..., tgt-1, src, tgt+1, ... n-1
+    # If a list R (of length m) is given, it is also
+    # permuted accordingly
+    A.swap_columns(src,tgt)
+    tmp = C[src]
+    C[src] = C[tgt]
+    C[tgt] = tmp
+    return C
+
+def row_rotation(A,row,R):
+    # rows 0, ..., row, ..., m-1
+    # are permuted into
+    # rows 0, ..., row-1, row+1, ..., m-1, row
+    # If a list R (of length m) is given, it is also
+    # permuted accordingly
+    m = A.nrows()
+    perm = Permutation([i+1 for i in range(m) if i != row] + [row+1])
+    A.permute_rows(perm)
+    return perm.action(R)
+
+def row_transposition(A,src,tgt,R):
+    # rows 0, ..., src, ..., tgt, ..., m-1
+    # are permuted into
+    # rows 0, ..., tgt, src+1 ..., tgt-1, src, tgt+1, ... m-1
+    # If a list R (of length m) is given, it is also
+    # permuted accordingly
+    A.swap_rows(src,tgt)
+    tmp = R[src]
+    R[src] = R[tgt]
+    R[tgt] = tmp
+    return R
+
 def PLUQ_to_LSP(LU,P,Q,rank):
+    ## WARNING: this only works if row rotations were used (and column rotations?)
     m,n = LU.dimensions()
     rrp = P[:rank]
     nrrp = P[rank:]
@@ -202,6 +231,11 @@ def expand_PLUQ(LU,P,Q,rank):
             U[i,j] = 0
     return L,U
 
+def expand_PLUQ_kernel(K,rrp,nrrp):
+    nullity,rank = K.dimensions()
+    K = K.augment(Matrix.identity(K.base_ring(), nullity, nullity))
+    K.permute_columns(Permutation([i+1 for i in rrp+nrrp]).inverse())
+    return K
 
 
 #############
@@ -346,13 +380,14 @@ def check_many_LSP(field_prime=2,max_iter=1000):
 
     return True
 
-def check_many_kernel(field_prime=2,max_iter=1000):
+def check_many_PLUQ_to_kernel(field_prime=2,max_iter=1000):
     field = GF(field_prime)
     i = 0
     correct = True
     while correct and i < max_iter:
         A = Matrix.random(field,6,3)
-        correct == (A.left_kernel() == (left_kernel(A).row_space()))
+        K = expand_PLUQ_kernel(*PLUQ_to_left_kernel(A))
+        correct == (A.left_kernel() == (K.row_space()))
         i += 1
     if correct:
         print("tall rectangular: ok")
@@ -363,7 +398,8 @@ def check_many_kernel(field_prime=2,max_iter=1000):
     i = 0
     while correct and i < max_iter:
         A = Matrix.random(field,3,6)
-        correct == (A.left_kernel() == (left_kernel(A).row_space()))
+        K = expand_PLUQ_kernel(*PLUQ_to_left_kernel(A))
+        correct == (A.left_kernel() == (K.row_space()))
         i += 1
     if correct:
         print("wide rectangular: ok")
@@ -374,7 +410,87 @@ def check_many_kernel(field_prime=2,max_iter=1000):
     i = 0
     while correct and i < max_iter:
         A = Matrix.random(field,4,4)
-        correct == (A.left_kernel() == (left_kernel(A).row_space()))
+        K = expand_PLUQ_kernel(*PLUQ_to_left_kernel(A))
+        correct == (A.left_kernel() == (K.row_space()))
+        i += 1
+    if correct:
+        print("square: ok")
+    else:
+        print("square: wrong")
+        return A
+
+def check_many_PLUQker_is_LSPker(field_prime=2,max_iter=1000):
+    field = GF(field_prime)
+    i = 0
+    correct = True
+    while correct and i < max_iter:
+        A = Matrix.random(field,6,3)
+        K1 = expand_PLUQ_kernel(*PLUQ_to_left_kernel(A))
+        K2 = LSP_to_left_kernel(A)
+        correct == (K1 == K2)
+        i += 1
+    if correct:
+        print("tall rectangular: ok")
+    else:
+        print("tall rectangular: wrong")
+        return A
+
+    i = 0
+    while correct and i < max_iter:
+        A = Matrix.random(field,3,6)
+        K1 = expand_PLUQ_kernel(*PLUQ_to_left_kernel(A))
+        K2 = LSP_to_left_kernel(A)
+        correct == (K1 == K2)
+        i += 1
+    if correct:
+        print("wide rectangular: ok")
+    else:
+        print("wide rectangular: wrong")
+        return A
+
+    i = 0
+    while correct and i < max_iter:
+        A = Matrix.random(field,4,4)
+        K1 = expand_PLUQ_kernel(*PLUQ_to_left_kernel(A))
+        K2 = LSP_to_left_kernel(A)
+        correct == (K1 == K2)
+        i += 1
+    if correct:
+        print("square: ok")
+    else:
+        print("square: wrong")
+        return A
+
+
+def check_many_LSP_to_kernel(field_prime=2,max_iter=1000):
+    field = GF(field_prime)
+    i = 0
+    correct = True
+    while correct and i < max_iter:
+        A = Matrix.random(field,6,3)
+        correct == (A.left_kernel() == (LSP_to_left_kernel(A).row_space()))
+        i += 1
+    if correct:
+        print("tall rectangular: ok")
+    else:
+        print("tall rectangular: wrong")
+        return A
+
+    i = 0
+    while correct and i < max_iter:
+        A = Matrix.random(field,3,6)
+        correct == (A.left_kernel() == (LSP_to_left_kernel(A).row_space()))
+        i += 1
+    if correct:
+        print("wide rectangular: ok")
+    else:
+        print("wide rectangular: wrong")
+        return A
+
+    i = 0
+    while correct and i < max_iter:
+        A = Matrix.random(field,4,4)
+        correct == (A.left_kernel() == (LSP_to_left_kernel(A).row_space()))
         i += 1
     if correct:
         print("square: ok")
