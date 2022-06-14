@@ -34,6 +34,9 @@ typedef enum
 } matrix_wise; 
 
 
+void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
+				slong rdim, slong cdim);
+
 /**
  * \fn void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree)
  * \brief set on res the coefficient matrix of degree degree of mat

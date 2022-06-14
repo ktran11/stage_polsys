@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef LIST_POLY_MAT_H
-#define LIST_POLY_MAT_H
+#ifndef NMOD_LIST_POLY_MAT_H
+#define NMOD_LIST_POLY_MAT_H
 
 #include "matpol.h"
 
@@ -23,7 +23,7 @@
 typedef struct
 {
   slong degree;
-  nmod_mat_t *mat;
+  nmod_mat_struct *mat;
   slong rdim;
   slong cdim;
   mp_limb_t modulus;
@@ -31,15 +31,34 @@ typedef struct
 
 typedef nmod_list_poly_mat_struct nmod_list_poly_mat_t[1];
 
-slong nmod_list_poly_mat_nrows(const nmod_poly_mat_t list_mat)
-{
-  return list_mat->rdim;
-}
+slong nmod_list_poly_mat_nrows(const nmod_list_poly_mat_t A);
 
-void nmod_list_poly_mat_init(nmod_list_poly_mat_t res);
+slong nmod_list_poly_mat_ncols(const nmod_list_poly_mat_t A);
+
+slong nmod_list_poly_mat_degree(const nmod_list_poly_mat_t A);
+
+mp_limb_t nmod_list_poly_mat_modulus(const nmod_list_poly_mat_t A);
+
+void nmod_list_poly_mat_print(const nmod_list_poly_mat_t A);
+
+void nmod_list_poly_mat_get_coef(nmod_mat_t res, const nmod_list_poly_mat_t F, slong k);
+
+void nmod_list_poly_mat_init(nmod_list_poly_mat_t res, slong degree,
+			     slong rdim, slong cdim, mp_limb_t modulus);
+
+void nmod_list_poly_mat_clear(nmod_list_poly_mat_t A);
+
+void nmod_list_poly_mat_init_set(nmod_list_poly_mat_t res, const nmod_poly_mat_t F);
 
 
-#endif /* MATPOL_H */
+void nmod_list_poly_mat_set_constant(nmod_list_poly_mat_t res, const nmod_mat_t F,
+				     mp_limb_t modulus);
+
+void nmod_list_poly_mat_naive_mul_coef(nmod_mat_t res, const nmod_list_poly_mat_t A,
+				       const nmod_list_poly_mat_t B, slong k);
+
+
+#endif /* NMOD_LIST_POLY_MAT_H */
 
 /* -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 // vim:sts=4:sw=4:ts=4:et:sr:cino=>s,f0,{0,g0,(0,\:0,t0,+0,=s

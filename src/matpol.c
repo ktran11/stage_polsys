@@ -1,5 +1,53 @@
 #include <matpol.h>
 
+
+void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
+				slong rdim, slong cdim)
+{
+  nmod_poly_t P;
+  slong length;
+  mp_limb_t mod = nmod_poly_mat_modulus(mat);
+
+  nmod_poly_init(P, mod);
+  printf("[");
+  for (slong i = 0; i < rdim; i++)
+    {
+      printf("[");
+      for (slong j = 0; j < cdim; j++)
+      {
+	nmod_poly_set(P, nmod_poly_mat_entry(mat, i, j));
+	length = nmod_poly_length(P);
+	if (length == 0)
+	  {
+	    if (j != cdim - 1)
+	      printf("0, ");
+	    else
+	      printf("0");
+	  }
+	else
+	  {
+	    for (slong k = 0; k < length; k++)
+	      {
+		if (k != length - 1) 
+		  printf("%ld*x^%ld + ", nmod_poly_get_coeff_ui(P, k), k);
+		else
+		  {
+		    if (j != cdim - 1)
+		      printf("%ld*x^%ld, ", nmod_poly_get_coeff_ui(P, k), k);
+		    else
+		      printf("%ld*x^%ld", nmod_poly_get_coeff_ui(P, k), k);
+		  }
+	      }
+	  }
+      }
+      if (i != rdim -1)
+	printf("],\n");
+      else
+	printf("]");
+    }
+  printf("]\n");
+}
+
 void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree)
 {
     slong rows = nmod_mat_nrows(res), cols = nmod_mat_ncols(res);
