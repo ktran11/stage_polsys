@@ -16,6 +16,9 @@
 #include <stdint.h>
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
+#include "matpol.h"
+#include "basis.h"
+
 
 void M_basis(nmod_poly_mat_t res, int64_t *res_shifts,
 	     const nmod_poly_mat_t F, const uint64_t sigma, int64_t *shifts,

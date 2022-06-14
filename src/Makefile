@@ -2,29 +2,27 @@ CFLAGS = -std=c11 -Wall -Wextra
 CPPFLAGS = -I/usr/local/include/flint -I/usr/local/include/ -I../include
 LDFLAGS = -L/usr/local/lib -lflint -lgmp -lmpfr -lpthread
 
-all: matpol pm_basis m_basis
+all: test 
 
-matpol: matpol.o
+test: main.o m_basis.o basis.o matpol.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-pm_basis: pm_basis.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+pm_basis.o: pm_basis.c
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
 
-m_basis: m_basis.o pm_basis.o matpol.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+main.o: main.c
 
 matpol.o: matpol.c 
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
 
-pm_basis.o: pm_basis.c
+basis.o: basis.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
 
 m_basis.o: m_basis.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
 
 clean:
-	@rm -f *~ *.o matpol pm_basis m_basis
-
+	@rm -f *~ *.o test 
 help:
 	@echo "Usage:"
 	@echo "  make [all] \t\t Run the whole build of matpol"

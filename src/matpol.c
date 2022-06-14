@@ -178,41 +178,6 @@ void leading_positions(uint64_t *res, const nmod_poly_mat_t mat,
     }
 }
 
-static void print_vect_uint64(const uint64_t *vect, slong len)
-{
-    if (!vect)
-        return;
-    for (slong i = 0; i < len; i++)
-        printf("%lu ", *(vect+i));
-    printf("\n");
-    return;
-}
-
-static void print_mat_uint64(const uint64_t *mat, slong rows, slong cols)
-{
-    if (!mat)
-        return;
-    for(slong i = 0; i < rows; i++)
-    {
-        for(slong j = 0; j < cols; j++)
-            printf("%ld ", *(mat+(i*rows)+j)) ;
-        printf("\n" );
-    }
-    return;
-}
-
-/**
-static void reverse(int arr[], int n)
-{
-    for (int low = 0, high = n - 1; low < high; low++, high--)
-    {
-        int temp = arr[low];
-        arr[low] = arr[high];
-        arr[high] = temp;
-    }
-}
-**/
-
 int is_hermite(const nmod_poly_mat_t mat, matrix_wise row_wise)
 {
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
@@ -331,69 +296,6 @@ int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_w
             return 0;
     }
     return 1;
-}
-
-int main(void)
-{
-    nmod_poly_mat_t A;
-    nmod_poly_mat_init(A,3,3,4);
-
-    slong cols = nmod_poly_mat_ncols(A), rows = nmod_poly_mat_nrows(A);
-    printf("number of columns: %lu, and rows: %lu\n", cols,rows);
-
-    flint_rand_t seed;
-    flint_randinit(seed);
-    nmod_poly_mat_randtest(A, seed, 5);
-    char *x = malloc(150);
-
-    printf("A");
-    nmod_poly_mat_print(A, x);
-
-    nmod_mat_t B;
-    nmod_mat_init(B, rows, cols, 4);
-    coefficient_matrix(B, A, 2);
-    printf("coefficient matrix for degree 2 of A");
-    nmod_mat_print_pretty(B);
-
-    uint64_t shifts[cols];
-
-    shifts[0] = 1; shifts[1] = 2; shifts[2] = 3;
-    printf("shifts: ");
-    print_vect_uint64(shifts, cols);
-
-    uint64_t cols_deg[cols];
-    column_degrees(cols_deg, A, shifts);
-    uint64_t rows_deg[rows];
-    row_degrees(rows_deg, A, shifts);
-
-    printf("column degree of A with shift \n");
-    print_vect_uint64(cols_deg, rows);
-    printf("row degree of A with shift \n");
-    print_vect_uint64(rows_deg, cols);
-
-    slong deg_A = nmod_poly_mat_degree(A);
-    printf("A's degree: %ld\n", deg_A);
-
-    matrix_wise row_wise = 0;
-    uint64_t *mat_deg = malloc(sizeof(uint64_t) * cols * rows);
-    degree_matrix(mat_deg, A, shifts, row_wise);
-    printf("\n");
-    print_mat_uint64(mat_deg, rows, cols);
-
-    uint64_t lead_pos[cols];
-    leading_positions(lead_pos, A, shifts, row_wise);
-    printf("leading position: ");
-    print_vect_uint64(lead_pos, cols);
-
-    qsort(lead_pos, rows, sizeof(uint64_t), intComparator);
-    printf("leading position (sorted): ");
-    print_vect_uint64(lead_pos, cols);
-
-    leading_matrix(B, A, shifts, row_wise);
-    printf("leading matrix for shift shifts of A");
-    nmod_mat_print_pretty(B);
-
-    return EXIT_SUCCESS;
 }
 
 /* -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
