@@ -174,10 +174,19 @@ def PLUQ(A):
             rank += 1
     return LU,P,Q,rank
 
-def expand_PLUQ(LU,P,Q,rank):
+def PLUQ_to_LSP(LU,P,Q,rank):
     m,n = LU.dimensions()
     rrp = P[:rank]
     nrrp = P[rank:]
+    L,S = expand_PLUQ(LU,P,Q,rank)
+    L.permute_rows(Permutation([i+1 for i in P]).inverse())
+    L.permute_columns(Permutation([i+1 for i in P]).inverse())
+    S.permute_rows(Permutation([i+1 for i in P]).inverse())
+    #Q = Matrix(Permutation([i+1 for i in Q])).transpose()
+    return L,S,Q,rrp,nrrp
+
+def expand_PLUQ(LU,P,Q,rank):
+    m,n = LU.dimensions()
     # retrieve L
     L = Matrix(LU.base_ring(), m, m)
     for j in range(rank):
@@ -185,22 +194,86 @@ def expand_PLUQ(LU,P,Q,rank):
             L[i,j] = LU[i,j]
     for i in range(m):
         L[i,i] = 1
-    L.permute_columns(Permutation([i+1 for i in P]).inverse())
-    L.permute_rows(Permutation([i+1 for i in P]).inverse())
-    # retrieve S
-    S = Matrix(LU.base_ring(), m, n)
-    S[:rank,:] = LU[:rank,:]
+    # retrieve U
+    U = Matrix(LU.base_ring(), m, n)
+    U[:rank,:] = LU[:rank,:]
     for i in range(rank):
         for j in range(i):
-            S[i,j] = 0
-    S.permute_rows(Permutation([i+1 for i in P]).inverse())
-    return L,S,Q,rrp,nrrp
+            U[i,j] = 0
+    return L,U
 
 
 
 #############
 #  Testing  #
 #############
+
+def check_triL(L):
+    m,n = L.dimensions()
+    if m != n:
+        return False
+    unit = all([L[i,i] == 1 for i in range(m)]) 
+    if not unit:
+        return False
+    tri = all([L[i,j] == 0 for i in range(m) for j in range(i+1,m)])
+    if not tri:
+        return False
+    return True
+
+def check_triU(U,rank):
+    m,n = U.dimensions()
+    if rank > m or rank > n:
+        return False
+    inv = all([L[i,i] != 0 for i in range(rank)]) 
+    if not inv:
+        return False
+    tri = all([L[i,j] == 0 for i in range(m) for j in range(min(i,n))])
+    if not tri:
+        return False
+    return True
+
+def check_many_PLUQ(field_prime=2,max_iter=1000):
+    field = GF(field_prime)
+    i = 0
+    correct = True
+    while correct and i < max_iter:
+        A = Matrix.random(field,6,3)
+        LU,P,Q,rank = PLUQ(A)
+        L,U = expand_PLUQ(LU,P,Q,rank)
+        correct = correct              \
+                and rank==A.rank()     \
+                and check_triL(L)      \
+                and check_triU(U,rank)
+        i += 1
+    if correct:
+        print("tall rectangular: ok")
+    else:
+        print("tall rectangular: wrong")
+        return A
+
+    i = 0
+    while correct and i < max_iter:
+        A = Matrix.random(field,3,6)
+        i += 1
+    if correct:
+        print("wide rectangular: ok")
+    else:
+        print("wide rectangular: wrong")
+        return A
+
+    i = 0
+    while correct and i < max_iter:
+        A = Matrix.random(field,4,4)
+        i += 1
+    if correct:
+        print("square: ok")
+    else:
+        print("square: wrong")
+        return A
+
+    return True
+
+
 
 def check_many_LSP(field_prime=2,max_iter=1000):
     field = GF(field_prime)
