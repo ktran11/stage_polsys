@@ -31,8 +31,15 @@ typedef enum
     COLUMN_WISE = 0,
     ROW_WISE = 1
 
-} matrix_wise; 
+} matrix_wise;
 
+void int64_print(const int64_t *shifts, slong length);
+
+int is_minimal_approximant_basis(const nmod_poly_mat_t base,
+				 const nmod_mat_t mat, int64_t order,
+				 int64_t *shifts);
+void nmod_mat_print(const nmod_mat_t mat,
+		    slong rdim, slong cdim);
 
 void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
 				slong rdim, slong cdim);

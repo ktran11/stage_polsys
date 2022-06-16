@@ -23,12 +23,10 @@
 #include <nmod_poly_mat.h>
 
 void M_basis(nmod_poly_mat_t res, int64_t *res_shifts,
-	     const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts,
-	     slong rdim, slong cdim, slong prime);
+	     const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts);
   
 void M_basisII(nmod_poly_mat_t res, int64_t *res_shifts,
-	       const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts,
-	       slong rdim, slong cdim, slong prime);
+	       const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts);
 
 #endif /* M_BASIS_H */
 

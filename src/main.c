@@ -4,7 +4,7 @@
 #include "matpol.h"
 #include "basis.h"
 #include "perm_operator.h"
-
+#include <time.h>
 #include <profiler.h>
 
 static void print_vect_uint64(const uint64_t *vect, slong len)
@@ -17,15 +17,6 @@ static void print_vect_uint64(const uint64_t *vect, slong len)
     return;
 }
 
-static void print_vect_slong(const slong *vect, slong len)
-{
-    if (!vect)
-        return;
-    for (slong i = 0; i < len; i++)
-        printf("%ld ", *(vect+i));
-    printf("\n");
-    return;
-}
 
 static void print_mat_uint64(const uint64_t *mat, slong rows, slong cols)
 {
@@ -103,53 +94,74 @@ int test_mbasis(void)
 {
   nmod_poly_mat_t mat, first_res, second_res, third_res;
   nmod_mat_t A;
-  slong rdim = 6, cdim = 3, prime = 7, len = 10, *shifts, sigma = 4,
-    first_shifts[rdim], second_shifts[rdim], third_shifts[rdim];  
-  char *x = malloc(1);
+  slong rdim, cdim, prime, sigma;
+  
+  printf("Saisir rdim: ");
+  scanf("%ld", &rdim);
+  printf("Saisir cdim: ");
+  scanf("%ld", &cdim);
+  printf("Saisir prime: ");
+  scanf("%ld", &prime);
+  printf("Saisir une valeur > 0 de sigma: ");
+  scanf("%ld", &sigma);
+  slong len = sigma;
+  slong shifts[rdim];
+  slong  first_shifts[rdim], second_shifts[rdim], third_shifts[rdim];
 
+  
   // Creates random poly mat
   nmod_poly_mat_init(mat, rdim, cdim, prime);
   
   flint_rand_t state;
   flint_randinit(state);
-
+  
   nmod_poly_mat_randtest(mat, state, len);
-  printf("\nStudied matrix \n");
-  nmod_poly_mat_print(mat, x);
-  
+  //printf("\nStudied matrix \n");
+  //printf("m = %ld\nn = %ld \nF = GF(%ld)\nsigma = %ld\n", rdim, cdim, prime, sigma);
+  // printf("A = Ms(");
+  //nmod_poly_mat_print_pretty(mat, rdim, cdim);
+  //printf(")\n\n");
   // Creates random shifts
-  shifts= _perm_init(rdim);
-  _perm_randtest(shifts, rdim, state);
-  printf("shifts: \n");
-  print_vect_slong(shifts, rdim);
+  for (slong i = 0; i < rdim; i++)
+    shifts[i] = 0;
+  //  _perm_randtest(shifts, rdim, state);
+  printf("shifts = ");
+  int64_print(shifts, rdim);
 
+
+  timeit_t t0;
+  
   nmod_poly_mat_init(first_res, rdim, rdim, prime);
-  
-  M_basis(first_res, first_shifts, mat, sigma, shifts, rdim, cdim, prime);
-  
-  printf("M_basis(sigma = 1)\n");
-  nmod_poly_mat_print_pretty(first_res, rdim, rdim);
-  printf("res_shifts M_basis\n");
-  print_vect_slong(first_shifts, rdim);
 
-  nmod_mat_init(A, rdim, cdim, prime);
-  coefficient_matrix(A, mat, 0);
-  nmod_poly_mat_init(second_res, rdim, rdim, prime);
-  Basis(second_res, second_shifts, A, shifts, rdim, cdim, prime);
+  timeit_start(t0);
 
-  printf("\nBasis()\n");
-  nmod_poly_mat_print(second_res,x);
-  printf("res_shifts basis\n");
-  print_vect_slong(second_shifts, rdim);
+  M_basis(first_res, first_shifts, mat, sigma, shifts);
+  timeit_stop(t0);
 
+ 
+  flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+
+  if (sigma < 2)
+    {
+      nmod_mat_init(A, rdim, cdim, prime);
+      coefficient_matrix(A, mat, 0);
+      nmod_poly_mat_init(second_res, rdim, rdim, prime);
+      Basis(second_res, second_shifts, A, shifts);
+      printf("\nBasis()\n");
+      nmod_poly_mat_print_pretty(second_res, rdim, rdim);
+      printf("res_shifts basis\n");
+      int64_print(second_shifts, rdim);
+    }
+
+  timeit_start(t0);
   
   nmod_poly_mat_init(third_res, rdim, rdim, prime);  
-  M_basisII(third_res, third_shifts, mat, sigma, shifts, rdim, cdim, prime);
+  M_basisII(third_res, third_shifts, mat, sigma, shifts);
 
-  printf("M_basisII(sigma = 1)\n");
-  nmod_poly_mat_print_pretty(third_res, rdim, rdim);
-  printf("res_shifts M_basis II\n");
-  print_vect_slong(third_shifts, rdim);
+  timeit_stop(t0);
+
+ 
+  flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
   
   return 0;
 }
@@ -168,7 +180,7 @@ int test_nmod_list_poly_mat(void)
   flint_randinit(state);
 
   nmod_poly_mat_randtest(mat, state, len);
-  printf("\nStudied matrix \n");
+  printf("\nStudied matrix\n");
   nmod_poly_mat_print(mat, x);
 
   nmod_list_poly_mat_init_set(mat_repr, mat);
@@ -180,6 +192,72 @@ int test_nmod_list_poly_mat(void)
   return 0;
 }
 
+
+int test_left_kernel(void)
+{
+ 
+  nmod_mat_t mat;
+  slong *perm, rdim = 16, cdim = 8, prime = 3;
+  nmod_poly_mat_t res;
+  int64_t res_shifts[rdim], shifts[rdim];
+  
+  nmod_mat_init(mat, rdim, cdim, prime);
+
+  flint_rand_t state;
+  flint_randinit(state);
+  srand(time(NULL));
+  flint_randseed(state, rand(), rand());
+
+  nmod_mat_randtest(mat, state);
+
+  for (slong i = 0; i < rdim; i++)
+    shifts[i] =  rand() % 10 - 5;
+
+  printf("Matrix\n");
+  nmod_mat_print(mat, rdim, cdim);
+
+  printf("Shifts");
+  int64_print(shifts, rdim);
+
+  printf("\n");
+  perm = _perm_init(rdim);
+
+  nmod_poly_mat_init(res, rdim, rdim, prime);
+
+  printf("Basis\n");
+  Basis(res, res_shifts, mat, shifts);
+
+  
+  //nmod_poly_mat_print_pretty(res, rdim, rdim);
+  //printf("New shifts ");
+  //int64_print(res_shifts, rdim);
+
+
+  nmod_mat_t res_II;
+  int64_t res_II_shifts[rdim];
+  slong *res_perm_II;
+  res_perm_II = _perm_init(rdim);
+  slong rankII;   
+
+  rankII = Basis_for_M_basis(res_II, res_II_shifts, res_perm_II, mat, shifts);
+  printf("\n Result Basis for M Basis \n");
+  printf("Mat\n");
+  nmod_mat_print(res_II, rdim - rankII, rankII);
+  printf("\nshifts");
+  int64_print(res_II_shifts, rdim);
+  printf("\n perm ");
+  _perm_print(res_perm_II, rdim);
+
+
+  nmod_mat_clear(res_II);
+  _perm_clear(res_perm_II);  
+  nmod_poly_mat_clear(res);
+  _perm_clear(perm);
+  nmod_mat_clear(mat);
+  flint_randclear(state);
+  return 0;
+  
+}
 
 
 
@@ -208,7 +286,7 @@ int test_basis(void)
   for (int64_t i = 0; i < rdim; i++)
     shift[i] = i;
   
-  Basis(res, res_shift, mat, shift, rdim, cdim, prime);
+  Basis(res, res_shift, mat, shift);
   
   nmod_poly_mat_clear(res);
 
@@ -217,7 +295,7 @@ int test_basis(void)
   nmod_mat_t res2;
   int64_t res_shift2[rdim];
   slong res_perm2[rdim];
-  slong rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift, rdim, cdim, prime);
+  slong rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift);
 
   nmod_mat_print_pretty(res2);
 
@@ -227,7 +305,7 @@ int test_basis(void)
 
   printf("\nnew_mat\n");
   nmod_mat_print_pretty(mat);
-  rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift, rdim, cdim, prime);
+  rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift);
 
   printf("new_res2\n");
   nmod_mat_print_pretty(res2);
@@ -352,6 +430,7 @@ int test_matpol(void)
 int main(void)
 {
   //test_nmod_list_poly_mat();
+  //test_left_kernel();
   test_mbasis();
   return EXIT_SUCCESS;
 }

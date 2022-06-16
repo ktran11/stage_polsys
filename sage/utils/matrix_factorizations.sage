@@ -146,7 +146,7 @@ def PLUQ_to_left_kernel(A):
     for i in range(rank):
         LU[i,i] = 1
         for j in range(i+1,n):
-            LU[i,j] = 0
+            LU[i,j] = 0 
     K = - LU[rank:,:rank] * LU[:rank,:rank].inverse()
     return K,P[:rank],P[rank:]
 

@@ -1,5 +1,12 @@
 #include <matpol.h>
 
+void int64_print(const int64_t *shifts, slong length)
+{
+  printf("[");
+  for (slong i = 0; i < length - 1; i++)
+    printf("%ld,", shifts[i]);
+  printf("%ld]\n", shifts[length - 1]);
+}
 
 void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
 				slong rdim, slong cdim)
@@ -29,13 +36,31 @@ void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
 	    for (slong k = 0; k < length; k++)
 	      {
 		if (k != length - 1) 
-		  printf("%ld*x^%ld + ", nmod_poly_get_coeff_ui(P, k), k);
+		  {
+		    if (k == 0)
+		      printf("%ld +", nmod_poly_get_coeff_ui(P, k));
+		    else
+		      printf("%ld*x^%ld + ", nmod_poly_get_coeff_ui(P, k), k);
+		  }
 		else
 		  {
 		    if (j != cdim - 1)
-		      printf("%ld*x^%ld, ", nmod_poly_get_coeff_ui(P, k), k);
+		      {
+		
+			if (k == 0)
+			  printf("%ld,", nmod_poly_get_coeff_ui(P, k));
+			else
+			  printf("%ld*x^%ld,", nmod_poly_get_coeff_ui(P, k), k);	
+
+		      }
 		    else
-		      printf("%ld*x^%ld", nmod_poly_get_coeff_ui(P, k), k);
+		      {
+			
+			if (k == 0)
+			  printf("%ld", nmod_poly_get_coeff_ui(P, k));
+			else
+			  printf("%ld*x^%ld", nmod_poly_get_coeff_ui(P, k), k);
+		      }
 		  }
 	      }
 	  }
@@ -47,6 +72,30 @@ void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
     }
   printf("]\n");
 }
+
+void nmod_mat_print(const nmod_mat_t mat,
+		    slong rdim, slong cdim)
+{
+  printf("[");
+  for (slong i = 0; i < rdim; i++)
+    {
+      printf("[");
+      for (slong j = 0; j < cdim; j++)
+      {
+	if (j != cdim - 1)
+	  printf("%ld, ",  nmod_mat_get_entry(mat, i, j));
+	else
+	  printf("%ld",  nmod_mat_get_entry(mat, i, j));
+
+      }
+      if (i != rdim -1)
+	printf("],\n");
+      else
+	printf("]");
+    }
+  printf("]\n");
+}
+
 
 void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree)
 {
@@ -154,7 +203,7 @@ void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat,
                     uint64_t *shifts, matrix_wise row_wise)
 {
     slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    nmod_poly_struct *P;
+    nmod_poly_t P;
     if (row_wise)
     {
         uint64_t rdeg[rows];
@@ -162,8 +211,8 @@ void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat,
         for(slong i = 0; i < rows; i++)
             for(slong j = 0; j < cols; j++)
             {
-                P = nmod_poly_mat_entry(mat, i, j);
-                nmod_mat_entry(res, i, j) = nmod_poly_get_coeff_ui(P, rdeg[i] - shifts[j]);
+	      nmod_poly_set(P, nmod_poly_mat_entry(mat, i, j));
+	      nmod_mat_set_entry(res, i, j, nmod_poly_get_coeff_ui(P, rdeg[i] - shifts[j]));
             }
         return;
     }
@@ -173,8 +222,8 @@ void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat,
         for(slong i = 0; i < cols; i++)
             for(slong j = 0; j < rows; j++)
             {
-                P = nmod_poly_mat_entry(mat, j, i);
-                nmod_mat_entry(res, j, i) = nmod_poly_get_coeff_ui(P, cdeg[i] - shifts[j]);
+	      nmod_poly_set(P, nmod_poly_mat_entry(mat, j, i));
+	      nmod_mat_set_entry(res, j, i, nmod_poly_get_coeff_ui(P, cdeg[i] - shifts[j]));
             }
     }
 }
@@ -315,35 +364,101 @@ static int intComparator ( const void * first, const void * second ) {
 
 int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered)
 {
-    slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
-    if (row_wise)
+  if (!is_reduced(mat, shifts, row_wise))
+    return 0;
+  slong cols = nmod_poly_mat_ncols(mat), rows = nmod_poly_mat_nrows(mat);
+  
+  if (row_wise)
     {
-        uint64_t lead_pos[rows];
-        leading_positions(lead_pos, mat, shifts, row_wise);
-
-        if (!ordered)
-            qsort(lead_pos, rows, sizeof(uint64_t), intComparator);
-
-        for (slong i = 0; i < rows - 1; i++)
+      uint64_t lead_pos[rows];
+      leading_positions(lead_pos, mat, shifts, row_wise);
+      
+      if (!ordered)
+	qsort(lead_pos, rows, sizeof(uint64_t), intComparator);
+      
+      for (slong i = 0; i < rows - 1; i++)
         {
-            if (lead_pos[i] > lead_pos[i+1])
-                return 0;
+	  if (lead_pos[i] > lead_pos[i+1])
+	    return 0;
         }
-        return 1;
+      return 1;
     }
 
-    uint64_t lead_pos[cols];
-    leading_positions(lead_pos, mat, shifts, row_wise);
+  uint64_t lead_pos[cols];
+  leading_positions(lead_pos, mat, shifts, row_wise);
 
-    if (!ordered)
-        qsort(lead_pos, cols, sizeof(uint64_t), intComparator);
-
-    for (slong i = 0; i < cols; i++)
+  if (!ordered)
     {
-        if (lead_pos[i] > lead_pos[i+1])
-            return 0;
+      qsort(lead_pos, cols, sizeof(uint64_t), intComparator);
+	
+      for (slong i = 0; i < cols; i++)
+	{
+	  if (lead_pos[i] > lead_pos[i+1])
+	    return 0;
+	}
     }
-    return 1;
+  return 1;
+}
+
+int is_zero_mod_xk(const nmod_poly_mat_t mat, int64_t k)
+{
+  nmod_poly_t P;
+  nmod_poly_init(P, mat->modulus);
+
+  for(slong i = 0; i < mat->r; i++)
+    for(slong j = 0; j < mat->c; j++)
+      {
+	nmod_poly_set(P, nmod_poly_mat_entry(mat, i, j));
+	nmod_poly_shift_right(P, P, k+1);
+	if (!nmod_poly_is_zero(P))
+	  {
+	    nmod_poly_clear(P);
+	    return 0;
+	  }
+      }
+  nmod_poly_clear(P);
+  return 1;
+}
+
+int is_minimal_approximant_basis(const nmod_poly_mat_t base,
+				 const nmod_mat_t mat, int64_t order,
+				 int64_t *shifts)
+{
+  slong rdim = mat->r, cdim = mat->c;
+  mp_limb_t prime = mat->mod.n;
+  nmod_poly_t constant;
+  nmod_poly_mat_t mat_poly, res_mul;
+
+  if (base->c != base->r)
+    {
+      printf("not basis: wrong shape");
+      return 0;
+    }
+  
+  nmod_poly_mat_init(mat_poly, rdim, cdim, prime);
+  slong alloc;
+  nmod_poly_init(constant, prime); 
+  for (slong i = 0; i < rdim; i++)
+    for (slong j = 0; j < cdim; j++)
+      {
+	alloc = (slong) nmod_mat_get_entry(mat, i, j);
+	nmod_poly_set_coeff_ui(constant, 0, alloc);
+	nmod_poly_set(nmod_poly_mat_entry(mat_poly, i, j), constant); 
+      }
+  nmod_poly_mat_init(res_mul, rdim, cdim, prime);  
+  nmod_poly_mat_mul(res_mul, base, mat_poly);
+  
+  if (! is_zero_mod_xk(res_mul, order))
+    {
+      printf("not zero");
+      return 0;
+    }
+  uint64_t lead_pos[rdim];
+  leading_positions(lead_pos, base, shifts, ROW_WISE);
+  printf("\nleading positions\n");
+  for (slong i = 0; i < rdim; i++)
+    printf("%lu ", lead_pos[i]); 
+  return 1;
 }
 
 /* -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */

@@ -15,6 +15,7 @@
 
 #include "matpol.h"
 #include "perm_operator.h"
+#include "nmod_mat_extra.h"
 
 #include <flint.h>
 #include <stdint.h>
@@ -25,8 +26,7 @@
 
 /**
  * \fn void Basis(nmod_poly_mat_t res, int64_t *res_shift,
-	   nmod_mat_t mat, int64_t *shift,
-	   slong rdim, slong cdim, slong prime);
+	   nmod_mat_t mat, int64_t *shift);
  * \brief set on res the minimal approximant basis of mat for order 1
  and set res_shift the shift row degree of res
  * 
@@ -36,18 +36,13 @@
  * \param res_shift a vector of length rdim
  * \param mat a polynomial matrix
  * \param shift a vector of length rdim
- * \param rdim the row's number of mat
- * \param cdim the column's number of mat
- * \param prime the modulus
  *
  */
 void Basis(nmod_poly_mat_t res, int64_t *res_shifts,
-	   const nmod_mat_t mat, const int64_t *shifts,
-	   slong rdim, slong cdim, slong prime);
+	   const nmod_mat_t mat, const int64_t *shifts);
 
 slong Basis_for_M_basis(nmod_mat_t res, int64_t *res_shifts, slong *res_perm,
-		       const nmod_mat_t mat, const int64_t *shifts,
-			slong rdim, slong cdim, slong prime);
+			const nmod_mat_t mat, const int64_t *shifts);
 
 #endif /* BASIS_H */
 

@@ -13,8 +13,8 @@
  *
  */
 static void structured_multiplication_blocks(nmod_poly_mat_t res, const nmod_mat_t A,
-					     const slong *perm, slong rank,
-					     slong rdim, slong cdim, slong prime)
+					     const slong *perm, slong rank, slong rdim, slong cdim,
+					     mp_limb_t prime)
 {
   nmod_poly_mat_t R1, R2, R1_cp, R2_cp, A_poly;
   nmod_poly_t X;
@@ -68,14 +68,14 @@ static void structured_multiplication_blocks(nmod_poly_mat_t res, const nmod_mat
 }
 
 void M_basis(nmod_poly_mat_t res, int64_t *res_shifts,
-	     const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts,
-	     slong rdim, slong cdim, slong prime)
+	     const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts)
 
 {
+  slong rdim = F->r, cdim = F->c;
+  mp_limb_t prime = F->modulus;
   nmod_poly_mat_t F_prime;
   nmod_mat_t A_k, constant_mat; 
   slong rank, *perm;
-  char *x = malloc(150);
   
   perm = _perm_init(rdim);
 
@@ -85,21 +85,22 @@ void M_basis(nmod_poly_mat_t res, int64_t *res_shifts,
   coefficient_matrix(constant_mat, F_prime, 0); //Compute F mod x
 
   nmod_poly_mat_one(res);
-  rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts, rdim, cdim, prime);
+  rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts);
 
   structured_multiplication_blocks(res, A_k, perm, rank, rdim, rdim, prime); //Compute P0
 
   for (uint64_t k = 1; k < sigma; k++)
     {
-      // printf("\nsigma = %ld\n", k);
-      // nmod_poly_mat_print_pretty(res, rdim, rdim);
+	  
       // doing the operation x^(-k) F_prime mod x     
       structured_multiplication_blocks(F_prime, A_k, perm, rank, rdim, cdim, prime);
       coefficient_matrix(constant_mat, F_prime, k);
-      //nmod_mat_print_pretty(constant_mat);
-      rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, res_shifts, rdim, cdim, prime);
-      // nmod_mat_print_pretty(A_k);
+  
+
+      rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, res_shifts);
+ 
       structured_multiplication_blocks(res, A_k, perm, rank, rdim, rdim, prime);
+
     }
 
   nmod_poly_mat_clear(F_prime);
@@ -110,13 +111,13 @@ void M_basis(nmod_poly_mat_t res, int64_t *res_shifts,
 }
 
 void M_basisII(nmod_poly_mat_t res, int64_t *res_shifts,
-	       const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts,
-	       slong rdim, slong cdim, slong prime)
+	       const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts)
 {
+  slong rdim = F->r, cdim = F->c;
+  mp_limb_t prime = F->modulus;
   nmod_list_poly_mat_t F_prime, res_list_repr;
   nmod_mat_t A_k, constant_mat; 
   slong rank, *perm;
-  char *x = malloc(150);
   
   perm = _perm_init(rdim);
 
@@ -127,20 +128,22 @@ void M_basisII(nmod_poly_mat_t res, int64_t *res_shifts,
   nmod_list_poly_mat_get_coef(constant_mat, F_prime, 0);
 
   nmod_poly_mat_one(res);
-  rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts, rdim, cdim, prime);
+  rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts);
 
-  structured_multiplication_blocks(res, A_k, perm, rank, rdim, rdim, prime); //Compute P0
+  structured_multiplication_blocks(res, A_k, perm, rank, rdim, rdim, prime);
+  //Compute P0 = inv_perm * [[x,0],[A0,1]]* perm  * res
 
   for (uint64_t k = 1; k < sigma; k++)
     {
       nmod_list_poly_mat_init_set(res_list_repr, res);
 
       nmod_list_poly_mat_naive_mul_coef(constant_mat, res_list_repr, F_prime, k);
-      
-      rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, res_shifts, rdim, cdim, prime);
-      
+
+      rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, res_shifts);
+
       structured_multiplication_blocks(res, A_k, perm, rank, rdim, rdim, prime);
       nmod_list_poly_mat_clear(res_list_repr);
+    
     }
   
   nmod_list_poly_mat_clear(F_prime);
