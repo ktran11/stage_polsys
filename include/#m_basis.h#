@@ -22,6 +22,7 @@
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
 
+
 /** static void structured_multiplication_blocks(nmod_poly_mat_t res, const nmod_mat_t A,
  *                                               const slong *perm, slong rank,
  *                                               slong rdim, slong cdim, slong prime)
@@ -35,7 +36,8 @@
  *
  */
 void structured_multiplication_blocks(nmod_poly_mat_t res, const nmod_mat_t A,
-				      const slong *perm, slong rank);
+				      const slong *perm, slong rank,
+				      slong rdim, slong cdim,slong prime);
 
 void M_basis(nmod_poly_mat_t res, int64_t *res_shifts,
 	     const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts);

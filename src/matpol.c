@@ -307,12 +307,13 @@ int is_weak_popov(const nmod_poly_mat_t mat, const int64_t *shifts, matrix_wise 
 
 int is_zero_mod_xk(const nmod_poly_mat_t mat, int64_t k)
 {
-  nmod_poly_struct *P;
+  nmod_poly_t P;
+  nmod_poly_init(P, mat->modulus);
   for(slong i = 0; i < mat->r; i++)
     for(slong j = 0; j < mat->c; j++)
       {
-	P = nmod_poly_mat_entry(mat, i, j);
-	nmod_poly_shift_right(P, P, k+1);
+	nmod_poly_set(P, nmod_poly_mat_entry(mat, i, j));
+	nmod_poly_shift_right(P, P, k);
 	if (!nmod_poly_is_zero(P))
 	  return 0;
       }
@@ -366,13 +367,15 @@ int is_minimal_approximant_basis(const nmod_poly_mat_t base,
 
 void nmod_poly_mat_shift(nmod_poly_mat_t res, slong k)
 {
+  nmod_poly_struct *P;
   if (k > 0)
     {
       for (slong i = 0; i < res->r; i++)
 	for (slong j = 0; j < res->c; j++)
 	  {
-	    nmod_poly_shift_left(nmod_poly_mat_entry(res, i, j),
-				  nmod_poly_mat_entry(res, i, j), k); 
+	    P = nmod_poly_mat_entry(res, i, j);
+	    if (!nmod_poly_is_zero(P))
+	      nmod_poly_shift_left(P, P, k); 
 	  }
       return;
     }
@@ -383,8 +386,9 @@ void nmod_poly_mat_shift(nmod_poly_mat_t res, slong k)
       for (slong i = 0; i < res->r; i++)
 	for (slong j = 0; j < res->c; j++)
 	  {
-	    nmod_poly_shift_right(nmod_poly_mat_entry(res, i, j),
-				   nmod_poly_mat_entry(res, i, j), k);
+	    P = nmod_poly_mat_entry(res, i, j);
+	    if (!nmod_poly_is_zero(P))
+	      nmod_poly_shift_right(P, P, k);
 	  }
       return;
     }

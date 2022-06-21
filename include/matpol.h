@@ -5,6 +5,8 @@
  * \version 1.0
  * \date June 6 2022
  *
+ * TO TEST AND FIX !!!
+ *
  * Add some functions availables on SageMath for the class nmod_poly_mat_t on flint
  * https://doc.sagemath.org/html/en/reference/matrices/sage/matrix/matrix_polynomial_dense.html
  * All parameters are supposed init
@@ -14,10 +16,9 @@
 #ifndef MATPOL_H
 #define MATPOL_H
 
-#include <stdint.h>
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
-
+#include <stdint.h>
 
 /**
  * \enum matrix_wise
@@ -27,22 +28,11 @@
  *
  */
 typedef enum
-{
+  {
     COLUMN_WISE = 0,
     ROW_WISE = 1
 
-} matrix_wise;
-
-void int64_print(const int64_t *shifts, slong length);
-
-int is_minimal_approximant_basis(const nmod_poly_mat_t base,
-				 const nmod_mat_t mat, int64_t order,
-				 int64_t *shifts);
-void nmod_mat_print(const nmod_mat_t mat,
-		    slong rdim, slong cdim);
-
-void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
-				slong rdim, slong cdim);
+  } matrix_wise;
 
 /**
  * \fn void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree)
@@ -55,7 +45,7 @@ void nmod_poly_mat_print_pretty(const nmod_poly_mat_t mat,
  * \param degree the degree the user need to study 
  *
  */
-void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree);
+void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, slong degree);
 
 /**
  * \fn void column_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
@@ -68,7 +58,7 @@ void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree);
  * \param shifts a pointer of an array of lenght the number of rows of mat   
  *
  */
-void column_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts);
+void column_degrees(int64_t *res, const nmod_poly_mat_t mat, const int64_t *shifts);
 
 /**
  * \fn void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
@@ -81,7 +71,7 @@ void column_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts);
  * \param shifts a pointer of an array of lenght the number of columns of mat   
  *
  */
-void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts);
+void row_degrees(int64_t *res, const nmod_poly_mat_t mat, const int64_t *shifts);
 
 /**
  * \fn slong nmod_poly_mat_degree(const nmod_poly_mat_t mat)
@@ -97,7 +87,7 @@ slong nmod_poly_mat_degree(const nmod_poly_mat_t mat);
 
 /**
  * \fn void degree_matrix(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
-                   matrix_wise row_wise)
+ matrix_wise row_wise)
  * \brief Stock on res the degree matrix of mat with the shifts shifts see depending of the matrix_wise
  * 
  * if mat = (m_{i,j}) then res = ( degree(m_{i,j}) + shifts[i or j] ) 
@@ -108,7 +98,7 @@ slong nmod_poly_mat_degree(const nmod_poly_mat_t mat);
  * \param shifts a pointer of an array of lenght the number of rows/columns of mat depending of row_wise   
  * \param row_wise gives two options for the shifts
  */
-void degree_matrix(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
+void degree_matrix(int64_t *res, const nmod_poly_mat_t mat, const int64_t *shifts,
                    matrix_wise row_wise);
 
 int is_hermite(const nmod_poly_mat_t mat, matrix_wise row_wise);
@@ -126,7 +116,7 @@ int is_hermite(const nmod_poly_mat_t mat, matrix_wise row_wise);
  * \param ordered, 1 if the leading positions must be increasing, 0 else
  * \return 1 if mat is popov, 0 else
  */
-int is_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered);
+int is_popov(const nmod_poly_mat_t mat, const int64_t *shifts, matrix_wise row_wise, int ordered);
 
 /**
  * \fn  int is_reduced(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise)
@@ -139,7 +129,7 @@ int is_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, 
  * \param row_wise gives two options for the shifts
  * \return 1 if mat is reduced, 0 else
  */
-int is_reduced(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise);
+int is_reduced(const nmod_poly_mat_t mat, const int64_t *shifts, matrix_wise row_wise);
 
 /**
  * \fn int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered)
@@ -153,11 +143,11 @@ int is_reduced(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise
  * \param ordered, 1 if the leading positions must be increasing, 0 else
  * \return 1 if mat is weak popov, 0 else
  */
-int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_wise, int ordered);
+int is_weak_popov(const nmod_poly_mat_t mat, const int64_t *shifts, matrix_wise row_wise, int ordered);
 
 /**
  * \fn void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, uint64_t *shifts,
-                    matrix_wise row_wise)
+ matrix_wise row_wise)
  * \brief Stock on res the leading matrix of mat with the shifts shifts see depending of the matrix_wise
  * 
  * Will use the row or column degrees of mat to compute the leading matrix of mat,
@@ -168,12 +158,12 @@ int is_weak_popov(const nmod_poly_mat_t mat, uint64_t *shifts, matrix_wise row_w
  * \param shifts a pointer of an array of lenght the number of rows/columns of mat depending of row_wise   
  * \param row_wise gives two options for the shifts
  */
-void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, uint64_t *shifts,
+void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, const int64_t *shifts,
                     matrix_wise row_wise);
 
 /**
  * \fn void leading_positions(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
-                       matrix_wise row_wise)
+ matrix_wise row_wise)
  * \brief Stock on res the leading positions of mat with the shifts shifts see depending of the matrix_wise
  * 
  * If we see mat with a ROW_WISE, the leading positions is the first column where the row degrees is reach starting by the right for each rows of mat.
@@ -183,8 +173,24 @@ void leading_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, uint64_t *shifts,
  * \param shifts a pointer of an array of lenght the number of columns/rows of mat depending of row_wise   
  * \param row_wise gives two options for the shifts
  */
-void leading_positions(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
+void leading_positions(int64_t *res, const nmod_poly_mat_t mat, const int64_t *shifts,
                        matrix_wise row_wise);
+
+void nmod_poly_mat_shift(nmod_poly_mat_t res, slong k);
+
+/** Not finished yet **/
+int is_minimal_approximant_basis(const nmod_poly_mat_t base,
+				 const nmod_mat_t mat, int64_t order,
+				 const int64_t *shifts);
+
+/** print for testing result on sage **/
+void nmod_mat_print_sage(const nmod_mat_t mat);
+
+void nmod_poly_mat_print_sage(const nmod_poly_mat_t mat);
+
+void int64_print_sage(const int64_t *shifts, slong length);
+
+void int64_mat_print(const int64_t *mat, slong rdim, slong cdim);
 
 #endif /* MATPOL_H */
 

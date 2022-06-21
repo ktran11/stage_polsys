@@ -85,7 +85,7 @@ slong nmod_mat_left_nullspace_compact(
     // clean
     nmod_mat_clear(At);
     nmod_mat_clear(Xt);
-
+    
     return nullity;
 }
 

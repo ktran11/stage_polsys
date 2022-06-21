@@ -13,7 +13,6 @@
 #ifndef PERM_OPERATOR_H
 #define PERM_OPERATOR_H
 
-#include <stdint.h>
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
 #include <perm.h> 

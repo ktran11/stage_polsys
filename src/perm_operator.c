@@ -47,7 +47,7 @@ void sort_and_create_perm(slong *perm, const int64_t *vec, slong n)
 static void nmod_poly_mat_swap_cols(nmod_poly_mat_t mat, slong * perm,
 			     slong r, slong s)
 {
-  if (r != s && !nmod_poly_mat_is_empty(mat))
+  if (r != s)
     {
       slong t;
       if (perm)
@@ -58,13 +58,13 @@ static void nmod_poly_mat_swap_cols(nmod_poly_mat_t mat, slong * perm,
         }
 
       for (t = 0; t < mat->r; t++)
-	nmod_poly_swap(&mat->rows[t][r],&mat->rows[t][s]);
+	nmod_poly_swap(mat->rows[t] + r, mat->rows[t] + s);
     }
 }
 
 static void nmod_poly_mat_swap_rows(nmod_poly_mat_t mat, slong * perm, slong r, slong s)
 {
-  if (r != s && !nmod_poly_mat_is_empty(mat))
+  if (r != s)
     {
       nmod_poly_struct *u;
       slong t;

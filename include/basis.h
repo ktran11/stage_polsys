@@ -17,8 +17,6 @@
 #include "perm_operator.h"
 #include "nmod_mat_extra.h"
 
-#include <flint.h>
-#include <stdint.h>
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
 #include <perm.h> 

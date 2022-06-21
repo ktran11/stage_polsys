@@ -7,88 +7,36 @@
 #include <time.h>
 #include <profiler.h>
 
-/**
-int test_mul_special_matrix(void)
-{
-  //nmod_mat_init(A, rdim - rank, rank, prime);
-  //nmod_mat_randtest(A, state);
+#define GREAT_PRIME_30_BITS 536870923
+#define GREAT_PRIME_60_BITS 576460752303423619
 
-  timeit_start(t0);
 
-  structured_multiplication_blocks(mat, A, perm, rank, rdim, cdim, prime);
-
-  timeit_stop(t0);
-
-  flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  nmod_poly_mat_init(G, rdim, rdim, prime);
-  nmod_poly_mat_zero(G);
-
-  nmod_poly_t One;
-  
-  nmod_poly_init(One, prime);
-  nmod_poly_set_coeff_ui(One, 0, 1); // 1
-  
-  for (slong i = rank; i < rdim; i++)
-    nmod_poly_set(nmod_poly_mat_entry(G, i, i), One);
-
-  nmod_poly_shift_left(One, One, 1); // x
-  for (slong i = 0; i < rank; i++)
-    nmod_poly_set(nmod_poly_mat_entry(G, i, i), One);
-
-  nmod_poly_clear(One);
-
-  nmod_poly_t constant;
-  slong alloc;
-  nmod_poly_init(constant, prime);
-  for (slong i = 0; i < rdim - rank; i++)
-    for (slong j = 0; j < rank; j++)
-      {
-	alloc = (slong) nmod_mat_get_entry(A, i, j);
-	nmod_poly_set_coeff_ui(constant, 0, alloc);
-	nmod_poly_set(nmod_poly_mat_entry(G, i + rank, j), constant); 
-      }
-
-  timeit_stop(t0);
-  
-  apply_perm_rows_to_poly_matrix(copy_mat, perm, rdim);
-  nmod_poly_mat_mul(copy_mat, G, copy_mat);
-
-  flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  printf("\n mat prod is equal %d\n", nmod_poly_mat_equal(mat, copy_mat));;
-  nmod_poly_mat_clear(mat);
-  nmod_poly_mat_clear(copy_mat);
-
-  nmod_mat_clear(A);
-  _perm_clear(perm);
-    
-}
-*/
-
+/** Test
+ * Verify if all versions of M_Basis give the same results, test time
+ */
 int test_mbasis(void)
 {
-  nmod_poly_mat_t mat, first_res, second_res, third_res, fourth_res;
+  nmod_poly_mat_t mat, first_res, second_res, third_res, fourth_res, fifth_res, sixth_res;
   nmod_mat_t A;
-  slong rdim, cdim, prime, sigma;
+  slong rdim, cdim, prime = 3, sigma;
   
   printf("Saisir rdim: ");
   scanf("%ld", &rdim);
   printf("Saisir cdim: ");
   scanf("%ld", &cdim);
-  printf("Saisir prime: ");
-  scanf("%ld", &prime);
   printf("Saisir une valeur > 0 de sigma: ");
   scanf("%ld", &sigma);
   slong len = sigma;
   slong shifts[rdim];
-  slong  first_shifts[rdim], second_shifts[rdim], third_shifts[rdim], fourth_shifts[rdim];
+  slong  first_shifts[rdim], second_shifts[rdim], third_shifts[rdim], fourth_shifts[rdim],
+    fifth_shifts[rdim], sixth_shifts[rdim];
 
   
   // Creates random poly mat
   nmod_poly_mat_init(mat, rdim, cdim, prime);
   
   flint_rand_t state;
+  
   flint_randinit(state);
   
   nmod_poly_mat_randtest(mat, state, len);
@@ -98,25 +46,28 @@ int test_mbasis(void)
   nmod_poly_mat_print_sage(mat);
   printf(")\n\n");
   // Creates random shifts
-  _perm_randtest(shifts, rdim, state);
+  //_perm_randtest(shifts, rdim, state);
+  for (slong i = 0; i < rdim; i++)
+    shifts[i] = 0;
   printf("shifts = ");
   int64_print_sage(shifts, rdim);
 
-
-  // timeit_t t0;
+  printf("\n");
+  timeit_t t0;
   
   nmod_poly_mat_init(first_res, rdim, rdim, prime);
 
-  // timeit_start(t0);
+  timeit_start(t0);
   M_basis(first_res, first_shifts, mat, sigma, shifts);
-  //timeit_stop(t0);
-  //flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+  timeit_stop(t0);
+  flint_printf("M_basis: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
+  /** print
   printf("MBasis matrix representation\n");
   nmod_poly_mat_print_sage(first_res);
   printf("shifts result");
   int64_print_sage(first_shifts, rdim);
-
+  */
   if (sigma < 2)
     {
       nmod_mat_init(A, rdim, cdim, prime);
@@ -131,138 +82,260 @@ int test_mbasis(void)
 
   nmod_poly_mat_init(third_res, rdim, rdim, prime);
 
-  // timeit_start(t0);
+  timeit_start(t0);
   M_basisII(third_res, third_shifts, mat, sigma, shifts);
-  //timeit_stop(t0);
-  //flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+  timeit_stop(t0);
+  flint_printf("M_basisII cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
+  /** print
   printf("MBasis II  polynomial representation for F_prime and convert P_k into list poly mat\n");
   nmod_poly_mat_print_sage(third_res);
   printf("shifts result");
   int64_print_sage(third_shifts, rdim);
-
+  */
   
   nmod_poly_mat_init(fourth_res, rdim, rdim, prime);
 
-  // timeit_start(t0);
+  timeit_start(t0);
   M_basisIII(fourth_res, fourth_shifts, mat, sigma, shifts);
-  //timeit_stop(t0);
-  //flint_printf("cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+  timeit_stop(t0);
+  flint_printf("M_basisIII cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
+  /**
   printf("MBasis polynomial representation for F_prime recalculated for each loop and P_k poly mat\n");
   nmod_poly_mat_print_sage(fourth_res);
   printf("shifts result");
   int64_print_sage(fourth_shifts, rdim);
+  */
+  nmod_poly_mat_init(fifth_res, rdim, rdim, prime);
+
+  timeit_start(t0);
+  M_basisIV(fifth_res, fifth_shifts, mat, sigma, shifts);
+  timeit_stop(t0);
+  flint_printf("M_basisV cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+
+  /**
+  printf("MBasis polynomial representation for F_prime and P_k recalculated for each loop \n");
+  nmod_poly_mat_print_sage(fifth_res);
+  printf("shifts result");
+  int64_print_sage(fifth_shifts, rdim);
+  */
   
+  nmod_poly_mat_init(sixth_res, rdim, rdim, prime);
+
+  timeit_start(t0);
+  M_basisV(sixth_res, sixth_shifts, mat, sigma, shifts);
+  timeit_stop(t0);
+  flint_printf("M_basisV cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+
+  /**
+  printf("MBasis polynomial representation for F_prime and P_k recalculated for each loop \n");
+  nmod_poly_mat_print_sage(sixth_res);
+  printf("shifts result");
+  int64_print_sage(sixth_shifts, rdim);
+  */
   if (!nmod_poly_mat_equal(first_res, third_res))
-    printf("ERROR not equals m_basis I and II");
+    printf("ERROR not equals m_basis I and II\n");
 
   if (!nmod_poly_mat_equal(fourth_res, third_res))
-    printf("ERROR not equals m_basis II and III");
+    printf("ERROR not equals m_basis II and III\n");
 
   if (!nmod_poly_mat_equal(fourth_res, first_res))
-    printf("ERROR not equals m_basis I and III");
+    printf("ERROR not equals m_basis I and III\n");
 
+  if (!nmod_poly_mat_equal(fifth_res, first_res))
+    printf("ERROR not equals m_basis I and IV\n");
+  
+  if (!nmod_poly_mat_equal(sixth_res, first_res))
+    printf("ERROR not equals m_basis I and V\n");
+
+  if (!nmod_poly_mat_equal(sixth_res, fifth_res))
+   printf("ERROR not equals m_basis IV and V\n");
+ 
   return 0;
 }
 
+/** Test 
+ * Verify if nmod_poly_mat_mul + coefficient_matrix and 
+ * nmod_list_poly_mat_naive_mul_coef 
+ * return the same result.
+ * Verify if nmod_poly_mat -> nmod_list_poly_mat -> nmod_poly_mat
+ * unchanged the initial matrix
+ */
 int test_nmod_list_poly_mat(void)
 {
-  nmod_poly_mat_t mat;
-  nmod_list_poly_mat_t mat_repr; 
-  slong rdim = 6, cdim = 2, prime = 7, len = 10;  
+  nmod_mat_t prod, prod_2;
+  nmod_poly_mat_t mat, mat_2, res, res_2, poly_prod;
+  nmod_list_poly_mat_t mat_repr, mat_repr_2; 
+  slong rdim = 6, cdim = 2, prime = 7,
+    len = 10, len_2 = 20, k = 28;  
   char *x = malloc(1);
 
-  // Creates random poly mat
+  /** init **/
   nmod_poly_mat_init(mat, rdim, cdim, prime);
+  nmod_poly_mat_init(mat_2, cdim, rdim, prime);
+
+  nmod_poly_mat_init(res, rdim, cdim, prime);
+  nmod_poly_mat_init(res_2, cdim, rdim, prime);
   
-  flint_rand_t state;
-  flint_randinit(state);
+  nmod_poly_mat_init(poly_prod, rdim, rdim, prime);
 
-  nmod_poly_mat_randtest(mat, state, len);
-  printf("\nStudied matrix\n");
-  nmod_poly_mat_print(mat, x);
-
-  nmod_list_poly_mat_init_set(mat_repr, mat, 0);
-  nmod_list_poly_mat_print(mat_repr);
-
-  nmod_list_poly_mat_clear(mat_repr);
-  nmod_poly_mat_clear(mat);
-
-  return 0;
-}
-
-
-int test_left_kernel(void)
-{
- 
-  nmod_mat_t mat;
-  slong *perm, rdim = 16, cdim = 8, prime = 3;
-  nmod_poly_mat_t res;
-  int64_t res_shifts[rdim], shifts[rdim];
+  nmod_mat_init(prod, rdim, rdim, prime);
+  nmod_mat_init(prod_2, rdim, rdim, prime);
   
-  nmod_mat_init(mat, rdim, cdim, prime);
-
   flint_rand_t state;
   flint_randinit(state);
   srand(time(NULL));
   flint_randseed(state, rand(), rand());
 
-  nmod_mat_randtest(mat, state);
+  /** test poly_mat <-> list_poly_mat **/
+  nmod_poly_mat_randtest(mat, state, len);
+  nmod_poly_mat_randtest(mat_2, state, len_2);
 
-  for (slong i = 0; i < rdim; i++)
-    shifts[i] =  rand() % 10 - 5;
+  nmod_list_poly_mat_init_set(mat_repr, mat, 10);
+  nmod_list_poly_mat_init_set(mat_repr_2, mat_2, 9);
 
-  printf("Matrix\n");
-  nmod_mat_print_sage(mat);
+  nmod_list_poly_mat_to_poly_mat(res, mat_repr);
+  nmod_list_poly_mat_to_poly_mat(res_2, mat_repr_2);
+  
+  if (!nmod_poly_mat_equal(mat, res))
+    printf("error mat not equals");
+  if (!nmod_poly_mat_equal(mat_2, res_2))
+    printf("\nerror mat_2 not equals\n");
 
-  printf("Shifts");
-  int64_print_sage(shifts, rdim);
+  /** test mul: poly_mat <-> list_poly_mat **/
+  nmod_poly_mat_mul(poly_prod, res, res_2);
+  coefficient_matrix(prod, poly_prod, k);
 
-  printf("\n");
-  perm = _perm_init(rdim);
+  nmod_poly_mat_print(poly_prod, x);
+
+  nmod_list_poly_mat_naive_mul_coef(prod_2, mat_repr, mat_repr_2, k);
+
+
+  //print
+  nmod_mat_print_pretty(prod);
+  nmod_mat_print_pretty(prod_2);
+  
+  if (!nmod_mat_equal(prod_2, prod))
+    printf("error mul not equals");
+
+  /** clear **/
+  nmod_list_poly_mat_clear(mat_repr);
+  nmod_poly_mat_clear(mat);
+  nmod_poly_mat_clear(res);
+  
+  nmod_list_poly_mat_clear(mat_repr_2);
+  nmod_poly_mat_clear(mat_2);
+  nmod_poly_mat_clear(res_2);
+
+  nmod_poly_mat_clear(poly_prod);
+  nmod_mat_clear(prod);
+  nmod_mat_clear(prod_2);
+  
+  flint_randclear(state);
+  free(x);
+  
+  return 0;
+}
+
+/** Test 
+ * Verify if structured_multiplication blocks and 
+ * list_structured_multiplication_blocks and basis + nmod_poly_mat_mul
+ * return the same result
+ */
+int test_structured_mul_blocks(void)
+{
+  nmod_poly_mat_t mat, res, res_2, resid, resid_2, resid_3;
+  nmod_list_poly_mat_t mat_repr;
+  nmod_mat_t A, constant_mat;
+  slong rank, rdim = 8, cdim = 4, prime = 101, len = 10, sigma = 30,
+    shifts[rdim], res_shifts[rdim],
+    *perm = _perm_init(rdim);
+
+  /** init **/
+  nmod_poly_mat_init(mat, rdim, cdim, prime);
+  
+  nmod_poly_mat_init(resid, rdim, cdim, prime);
+  nmod_poly_mat_init(resid_2, rdim, cdim, prime);
+  nmod_poly_mat_init(resid_3, rdim, cdim, prime);
 
   nmod_poly_mat_init(res, rdim, rdim, prime);
+  nmod_poly_mat_init(res_2, rdim, rdim, prime);
 
-  printf("Basis\n");
-  Basis(res, res_shifts, mat, shifts);
+  flint_rand_t state;
+  flint_randinit(state);
+  srand(time(NULL));
+  flint_randseed(state, rand(), rand());
+  
+  nmod_poly_mat_randtest(mat, state, len);
+  nmod_poly_mat_set(resid, mat);
+  nmod_poly_mat_set(resid_2, mat);
+  nmod_list_poly_mat_init_set(mat_repr, mat, sigma);
 
   
-  //nmod_poly_mat_print_pretty(res, rdim, rdim);
-  //printf("New shifts ");
-  //int64_print(res_shifts, rdim);
+  for (slong i = 0; i < rdim; i++)
+    shifts[i] =  rand() % 10 - 5;
+  
+  nmod_mat_init(constant_mat, rdim, cdim, prime);
+ 
+  coefficient_matrix(constant_mat, mat, 0);
+  rank = Basis_for_M_basis(A, res_shifts, perm, constant_mat, shifts);
+  Basis(res_2, res_shifts, constant_mat, shifts);
+  nmod_poly_mat_mul(resid_2, res_2, resid_2);
 
+  nmod_poly_mat_one(res);
+  structured_multiplication_blocks(res, A, perm, rank);
 
-  nmod_mat_t res_II;
-  int64_t res_II_shifts[rdim];
-  slong *res_perm_II;
-  res_perm_II = _perm_init(rdim);
+  structured_multiplication_blocks(resid, A, perm, rank);
+   
+  structured_list_multiplication_blocks(mat_repr, A, perm, rank, sigma);
 
-  Basis_for_M_basis(res_II, res_II_shifts, res_perm_II, mat, shifts);
-  printf("\n Result Basis for M Basis \n");
-  printf("Mat\n");
-  nmod_mat_print_sage(res_II);
-  printf("\nshifts");
-  int64_print_sage(res_II_shifts, rdim);
-  printf("\n perm ");
-  _perm_print(res_perm_II, rdim);
+  nmod_list_poly_mat_to_poly_mat(resid_3, mat_repr); 
+  
+  // print
+  char *x = malloc(1);
+  nmod_poly_mat_print(res, x); 
+  nmod_poly_mat_print(res_2, x); 
+  nmod_poly_mat_print(resid, x); 
+  nmod_poly_mat_print(resid_2, x); 
+  nmod_poly_mat_print(resid_3, x);
+  free(x);
 
+  // test
+  if (!nmod_poly_mat_equal(res, res_2))
+    printf("Basis and Basis for M Basis not same result");
 
-  nmod_mat_clear(res_II);
-  _perm_clear(res_perm_II);  
+  if (!nmod_poly_mat_equal(resid, resid_2))
+    printf("Basis and Basis for M Basis not same result");
+
+  if (!nmod_poly_mat_equal(resid, resid_3))
+    printf("Basis and list_struct_mul not same result");
+  
+  /** clear **/
+  nmod_mat_clear(A);
+  nmod_mat_clear(constant_mat);
+
+  nmod_poly_mat_clear(mat);
   nmod_poly_mat_clear(res);
-  _perm_clear(perm);
-  nmod_mat_clear(mat);
-  flint_randclear(state);
-  return 0;
+  nmod_poly_mat_clear(resid);
+  nmod_poly_mat_clear(res_2);
+  nmod_poly_mat_clear(resid_2);
+  nmod_poly_mat_clear(resid_3);
   
+  nmod_list_poly_mat_clear(mat_repr);
+
+  _perm_clear(perm);
+  flint_randclear(state);
+  return 1;
 }
 
 
-
+/** Test
+ * verify if there are leaks in basis.c functions
+ **/
 int test_basis(void)
 {
-  nmod_mat_t mat, copy_mat;
+  nmod_mat_t mat;
   slong rdim = 9, cdim = 3, prime = 7;
 
   nmod_mat_init(mat, rdim, cdim, prime);
@@ -270,9 +343,11 @@ int test_basis(void)
    
   flint_rand_t state;
   flint_randinit(state);
-
+  srand(time(NULL));
+  flint_randseed(state, rand(), rand());
+  
   nmod_mat_randtest(mat, state);
-  nmod_mat_init_set(copy_mat, mat);
+
   
   nmod_poly_mat_t res; 
   nmod_poly_mat_init(res, rdim, rdim, prime);
@@ -281,32 +356,28 @@ int test_basis(void)
   int64_t res_shift[rdim];
 
   int64_t shift[rdim];
-
-  for (int64_t i = 0; i < rdim; i++)
-    shift[i] = i;
+  
+  for (slong i = 0; i < rdim; i++)
+    shift[i] =  rand() % 10 - 5;
   
   Basis(res, res_shift, mat, shift);
-  
-  nmod_poly_mat_clear(res);
 
-  nmod_mat_print_pretty(copy_mat);
-  
+
+  printf("Matrix\n");
+  nmod_mat_print_sage(mat);
+  printf("Result Basis\n");
+  nmod_poly_mat_print_sage(res);
+  nmod_poly_mat_clear(res);
+  flint_randclear(state);
+
   nmod_mat_t res2;
   int64_t res_shift2[rdim];
   slong res_perm2[rdim];
-  slong rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift);
-
-  nmod_mat_print_pretty(res2);
-
-  nmod_mat_clear(res2);
-
-  nmod_mat_randtest(mat,state);
-
-  printf("\nnew_mat\n");
-  nmod_mat_print_pretty(mat);
-  rank = Basis_for_M_basis(res2, res_shift2, res_perm2, copy_mat, shift);
-
-  printf("new_res2\n");
+  slong rank = Basis_for_M_basis(res2, res_shift2, res_perm2, mat, shift);
+    
+  nmod_mat_clear(mat);
+  
+  printf("\nMatrix A from basis = [[x,0],[A,1]]\n");
   nmod_mat_print_pretty(res2);
   
   printf("\nshifts = ");
@@ -319,53 +390,15 @@ int test_basis(void)
   
 
   printf("\nrank = %ld\n", rank);
+  
   nmod_mat_clear(res2);
-  
-  /**
-  rank = nmod_mat_lu(P, mat, 0);
-  nmod_mat_print_pretty(mat);
-
-  nmod_mat_init(L, rank, rank, prime);
-  nmod_mat_one(L);
-  for(slong i = 1; i < rank; i++)
-    for(slong j = 0; j < i; j++)
-      nmod_mat_set_entry(L, i, j, nmod_mat_entry(mat, i, j));
-  
-  nmod_mat_print_pretty(L);
-
-  printf("rank mat = %ld", rank);
-
-  nmod_mat_window_init(G, mat, rank, 0, rdim, cdim);
-
-  nmod_mat_print_pretty(G);
-  */
-
-  /** petit test sort and create perm
-  slong *p = _perm_init(rdim);
-  _perm_randtest(p, rdim, state);
-  printf("\nperm \n");
-  _perm_print(p, rdim);
-
-  nmod_mat_print_pretty(mat);
-  apply_perm_rows_to_matrix(mat, p, rdim);
-  nmod_mat_print_pretty(mat);
-
-  printf("perm after\n");
-  _perm_print(p, rdim);
-
-  printf("\n");
-  int64_t s[] = { 4, 1, -2, 3, 5, 1, 2, 5 };
-  sort_and_create_perm(p, s, rdim);
-  
-  _perm_print(p, rdim);
-  _perm_clear(p);
-  */
-  nmod_mat_clear(mat);
-  flint_randclear(state);
   return 0;
 }
 
 
+/** Test
+ * many function of matpol, verify if there are leaks 
+ **/
 int test_matpol(void)
 {
     nmod_poly_mat_t A;
@@ -433,6 +466,7 @@ int test_matpol(void)
     nmod_mat_clear(B);
     flint_randclear(seed);
     free(mat_deg);
+    
     return 1;
 }
 
@@ -440,9 +474,10 @@ int test_matpol(void)
 int main(void)
 {
   //test_nmod_list_poly_mat();
-  //test_left_kernel();
   test_mbasis();
   //test_matpol();
+  //test_basis();
+  //test_structured_mul_blocks();
   return EXIT_SUCCESS;
 }
 
