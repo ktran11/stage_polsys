@@ -2,10 +2,15 @@ CFLAGS = -std=c11 -Wall -Wextra
 CPPFLAGS = -I/usr/local/include/flint -I/usr/local/include/ -I../include
 LDFLAGS = -L/usr/local/lib -lflint -lgmp -lmpfr -lpthread
 
-all: test 
+all: test test_m_basis
 
 test: main.o m_basis.o basis.o matpol.o nmod_list_poly_mat.o perm_operator.o left_nullspace.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test_m_basis: m_basis_test.o m_basis.o basis.o matpol.o nmod_list_poly_mat.o perm_operator.o left_nullspace.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+test_m_basis.o: m_basis_test.c
 
 main.o: main.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 	
