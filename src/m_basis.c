@@ -158,9 +158,9 @@ void M_basisIII(nmod_poly_mat_t res, int64_t *res_shifts,
   perm = _perm_init(rdim);
   nmod_mat_init(constant_mat, rdim, cdim, prime);
 
-  nmod_list_poly_mat_init_setII(F_prime, F, sigma);
+  nmod_list_poly_mat_init_setII(F_prime, F, sigma); //possible improvement
 
-  nmod_list_poly_mat_get_coef(constant_mat, F_prime, 0);
+  nmod_list_poly_mat_get_coef(constant_mat, F_prime, 0); 
   rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts);
 
   nmod_poly_mat_one(res);
@@ -169,7 +169,7 @@ void M_basisIII(nmod_poly_mat_t res, int64_t *res_shifts,
 
   for (uint64_t k = 1; k < sigma; k++)
     {
-      structured_list_multiplication_blocks(F_prime, A_k, perm, rank, sigma);
+      structured_list_multiplication_blocks(F_prime, A_k, perm, rank, k - 1, sigma);
       nmod_list_poly_mat_get_coef(constant_mat, F_prime, k);
       
       nmod_mat_clear(A_k);

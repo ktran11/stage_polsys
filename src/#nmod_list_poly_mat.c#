@@ -125,7 +125,7 @@ void nmod_list_poly_mat_init_setII(nmod_list_poly_mat_t res, const nmod_poly_mat
 
   nmod_mat_t mat;
   nmod_mat_init(mat, rdim, cdim, modulus);
-  for (slong i = 0; i < min; i++)
+  for (slong i = 0; i < min; i++) // possible improvement
     {
       coefficient_matrix(mat, F, i);
       nmod_mat_set(res->mat + i, mat);
@@ -269,7 +269,6 @@ void nmod_list_poly_mat_naive_mul_coef(nmod_mat_t res, const nmod_list_poly_mat_
       nmod_mat_window_clear(R1);
       nmod_mat_window_clear(R2);
     }
-
 
   /** apply perm^(-1) **/
   _perm_inv(inv_perm, perm, rdim);

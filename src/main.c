@@ -26,7 +26,7 @@ int int64_equal(int64_t *shifts_1, int64_t *shifts_2, slong length)
 int test_mbasis(void)
 {
   nmod_poly_mat_t mat, first_res, second_res, third_res;
-  slong rdim = 512, cdim = 256, prime = PRIME_30_BITS, sigma = 32, len = 30,
+  slong rdim = 512, cdim = 256, prime = PRIME_30_BITS, sigma = 32, len = 32,
     shifts[rdim], first_shifts[rdim], second_shifts[rdim], third_shifts[rdim];
   timeit_t t0;
   flint_rand_t state;
@@ -220,7 +220,7 @@ int test_structured_mul_blocks(void)
 
   structured_multiplication_blocks(resid, A, perm, rank);
    
-  structured_list_multiplication_blocks(mat_repr, A, perm, rank, sigma);
+  structured_list_multiplication_blocks(mat_repr, A, perm, rank, 0, sigma);
 
   nmod_list_poly_mat_to_poly_mat(resid_3, mat_repr); 
   
@@ -410,6 +410,8 @@ int main(void)
   //test_matpol();
   //test_basis();
   //test_structured_mul_blocks();
+
+  
   return EXIT_SUCCESS;
 }
 
