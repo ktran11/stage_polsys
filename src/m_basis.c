@@ -158,7 +158,7 @@ void M_basisIII(nmod_poly_mat_t res, int64_t *res_shifts,
   perm = _perm_init(rdim);
   nmod_mat_init(constant_mat, rdim, cdim, prime);
 
-  nmod_list_poly_mat_init_setII(F_prime, F, sigma); //possible improvement
+  nmod_list_poly_mat_init_setII(F_prime, F, sigma); 
 
   nmod_list_poly_mat_get_coef(constant_mat, F_prime, 0); 
   rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts);
@@ -185,7 +185,6 @@ void M_basisIII(nmod_poly_mat_t res, int64_t *res_shifts,
   _perm_clear(perm);  
 }
 
-/**
 void M_basisIV(nmod_poly_mat_t res, int64_t *res_shifts,
 	       const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts)
 {
@@ -194,31 +193,32 @@ void M_basisIV(nmod_poly_mat_t res, int64_t *res_shifts,
   nmod_list_poly_mat_t F_prime, res_prime;
   nmod_mat_t A_k, constant_mat; 
   slong rank, *perm;
-
+  
   perm = _perm_init(rdim);
   nmod_mat_init(constant_mat, rdim, cdim, prime);
 
-  nmod_list_poly_mat_init_set(F_prime, F, sigma);
+  nmod_list_poly_mat_init_setII(F_prime, F, sigma);
   nmod_list_poly_mat_get_coef(constant_mat, F_prime, 0);
 
   rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts);
 
   nmod_poly_mat_one(res);
   structured_multiplication_blocks(res, A_k, perm, rank);
-  nmod_list_poly_mat_init_set(res_prime, res, sigma);
+  nmod_list_poly_mat_init_setIII(res_prime, res, sigma);
   //Compute P0 = inv_perm * [[x,0],[A0,1]]* perm  * res
 
   for (uint64_t k = 1; k < sigma; k++)
     {
-      structured_list_multiplication_blocks(F_prime, A_k, perm, rank, sigma);
+      structured_list_multiplication_blocks(F_prime, A_k, perm, rank, k - 1, sigma);
       nmod_list_poly_mat_get_coef(constant_mat, F_prime, k);
 
+      nmod_mat_clear(A_k);
       rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, res_shifts);
 
-      structured_list_multiplication_blocks(res_prime, A_k, perm, rank, sigma);
+      structured_list_multiplication_blocks_full(res_prime, A_k, perm, rank);
     }
 
-  nmod_list_poly_mat_to_poly_mat(res, res_prime);
+  nmod_list_poly_mat_to_poly_mat(res, res_prime); // can be improved 
 
   nmod_list_poly_mat_clear(F_prime);
   nmod_list_poly_mat_clear(res_prime);
@@ -226,7 +226,6 @@ void M_basisIV(nmod_poly_mat_t res, int64_t *res_shifts,
   nmod_mat_clear(A_k);
   _perm_clear(perm);  
 }
-
 
 void M_basisV(nmod_poly_mat_t res, int64_t *res_shifts,
 	       const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts)
@@ -238,35 +237,35 @@ void M_basisV(nmod_poly_mat_t res, int64_t *res_shifts,
   slong rank, *perm;
 
   perm = _perm_init(rdim);
-
   nmod_mat_init(constant_mat, rdim, cdim, prime);
-
-  nmod_list_poly_mat_init_set(F_prime, F, 0);
-
+  
+  nmod_list_poly_mat_init_set(F_prime, F);
   nmod_list_poly_mat_get_coef(constant_mat, F_prime, 0);
 
   rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, shifts);
 
   nmod_poly_mat_one(res);
   structured_multiplication_blocks(res, A_k, perm, rank);
-  nmod_list_poly_mat_init_set(res_prime, res, sigma);
-
+  nmod_list_poly_mat_init_setIII(res_prime, res, sigma);
+  
   for (uint64_t k = 1; k < sigma; k++)
     {
       nmod_list_poly_mat_naive_mul_coef(constant_mat, res_prime, F_prime, k);
-
+      
+      nmod_mat_clear(A_k);	    
       rank = Basis_for_M_basis(A_k, res_shifts, perm, constant_mat, res_shifts);
 
-      structured_list_multiplication_blocks(res_prime, A_k, perm, rank, sigma);
+      structured_list_multiplication_blocks_full(res_prime, A_k, perm, rank);
     }
-  
+
   nmod_list_poly_mat_to_poly_mat(res, res_prime);
+  
   nmod_list_poly_mat_clear(F_prime);
   nmod_list_poly_mat_clear(res_prime);
   nmod_mat_clear(constant_mat);
   nmod_mat_clear(A_k);
   _perm_clear(perm);  
 }
-**/
+
 /* -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 // vim:sts=4:sw=4:ts=4:et:sr:cino=>s,f0,{0,g0,(0,\:0,t0,+0,=s
