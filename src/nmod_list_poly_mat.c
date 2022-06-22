@@ -60,7 +60,7 @@ void nmod_list_poly_mat_clear(nmod_list_poly_mat_t A)
 
 void nmod_list_poly_mat_print(const nmod_list_poly_mat_t A)
 {
-  for (slong i = 0; i <= A->degree; i++)
+  for (slong i = 0; i < A->length; i++)
     nmod_mat_print_pretty(A->mat + i);
 }
 
@@ -87,7 +87,7 @@ void nmod_list_poly_mat_set(nmod_list_poly_mat_t res, const nmod_poly_mat_t F)
   res->degree = degree;
 }
 
-void nmod_list_poly_mat_init_set(nmod_list_poly_mat_t res, const nmod_poly_mat_t F, slong length)
+void nmod_list_poly_mat_init_set(nmod_list_poly_mat_t res, const nmod_poly_mat_t F)
 { 
   slong degree, rdim, cdim;
   mp_limb_t modulus;
@@ -96,14 +96,36 @@ void nmod_list_poly_mat_init_set(nmod_list_poly_mat_t res, const nmod_poly_mat_t
   cdim = nmod_poly_mat_ncols(F);
   modulus = nmod_poly_mat_modulus(F);
 
-  if (length <= degree)
-    nmod_list_poly_mat_init(res, degree, degree + 1, rdim, cdim, modulus);
-  else
-    nmod_list_poly_mat_init(res, degree, length, rdim, cdim, modulus);
+  nmod_list_poly_mat_init(res, degree, degree + 1, rdim, cdim, modulus);
 
   nmod_mat_t mat;
   nmod_mat_init(mat, rdim, cdim, modulus);
   for (slong i = 0; i <= degree; i++)
+    {
+      coefficient_matrix(mat, F, i);
+      nmod_mat_set(res->mat + i, mat);
+    }
+  
+  nmod_mat_clear(mat);
+}
+
+void nmod_list_poly_mat_init_setII(nmod_list_poly_mat_t res, const nmod_poly_mat_t F, slong length)
+{ 
+  slong degree, rdim, cdim, min = length;
+  mp_limb_t modulus;
+  degree = nmod_poly_mat_degree(F);
+  rdim = nmod_poly_mat_nrows(F);
+  cdim = nmod_poly_mat_ncols(F);
+  modulus = nmod_poly_mat_modulus(F);
+
+  nmod_list_poly_mat_init(res, degree, length, rdim, cdim, modulus);
+
+  if (degree + 1 < length)
+    min = degree + 1;
+
+  nmod_mat_t mat;
+  nmod_mat_init(mat, rdim, cdim, modulus);
+  for (slong i = 0; i < min; i++)
     {
       coefficient_matrix(mat, F, i);
       nmod_mat_set(res->mat + i, mat);
@@ -254,11 +276,10 @@ void nmod_list_poly_mat_naive_mul_coef(nmod_mat_t res, const nmod_list_poly_mat_
       nmod_mat_window_clear(R2);
     }
 
-  res->degree += 1;
-  
+
   /** apply perm^(-1) **/
   _perm_inv(inv_perm, perm, rdim);
-  for (i = 0; i <= res->degree; i++)
+  for (i = 0; i < res->length; i++)
     apply_perm_rows_to_matrix(res->mat + i, inv_perm, rdim);
     
   /** clear **/

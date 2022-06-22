@@ -7,151 +7,83 @@
 #include <time.h>
 #include <profiler.h>
 
-#define GREAT_PRIME_30_BITS 536870923
-#define GREAT_PRIME_60_BITS 576460752303423619
+#define PRIME_30_BITS 536870923
+#define PRIME_60_BITS 576460752303423619
 
+int int64_equal(int64_t *shifts_1, int64_t *shifts_2, slong length);
+
+int int64_equal(int64_t *shifts_1, int64_t *shifts_2, slong length)
+{
+  for (slong i = 0; i < length; i++)
+    if (shifts_1[i] != shifts_2[i])
+      return 0;
+  return 1;
+}
 
 /** Test
  * Verify if all versions of M_Basis give the same results, test time
  */
 int test_mbasis(void)
 {
-  nmod_poly_mat_t mat, first_res, second_res, third_res, fourth_res, fifth_res, sixth_res;
-  nmod_mat_t A;
-  slong rdim, cdim, prime = 3, sigma;
-  
-  printf("Saisir rdim: ");
-  scanf("%ld", &rdim);
-  printf("Saisir cdim: ");
-  scanf("%ld", &cdim);
-  printf("Saisir une valeur > 0 de sigma: ");
-  scanf("%ld", &sigma);
-  slong len = sigma;
-  slong shifts[rdim];
-  slong  first_shifts[rdim], second_shifts[rdim], third_shifts[rdim], fourth_shifts[rdim],
-    fifth_shifts[rdim], sixth_shifts[rdim];
-
-  
-  // Creates random poly mat
-  nmod_poly_mat_init(mat, rdim, cdim, prime);
-  
+  nmod_poly_mat_t mat, first_res, second_res, third_res;
+  slong rdim = 512, cdim = 256, prime = PRIME_30_BITS, sigma = 32, len = 30,
+    shifts[rdim], first_shifts[rdim], second_shifts[rdim], third_shifts[rdim];
+  timeit_t t0;
   flint_rand_t state;
-  
+
+  /** init **/
+  nmod_poly_mat_init(mat, rdim, cdim, prime);
+  nmod_poly_mat_init(first_res, rdim, rdim, prime);
+  nmod_poly_mat_init(second_res, rdim, rdim, prime);
+  nmod_poly_mat_init(third_res, rdim, rdim, prime);
   flint_randinit(state);
   
+  srand(time(NULL));
+  flint_randseed(state, rand(), rand());
+
   nmod_poly_mat_randtest(mat, state, len);
-  printf("\nStudied matrix \n");
-  printf("m = %ld\nn = %ld \nF = GF(%ld)\nsigma = %ld\n", rdim, cdim, prime, sigma);
-  printf("A = Ms(");
-  nmod_poly_mat_print_sage(mat);
-  printf(")\n\n");
-  // Creates random shifts
+
   //_perm_randtest(shifts, rdim, state);
   for (slong i = 0; i < rdim; i++)
     shifts[i] = 0;
-  printf("shifts = ");
-  int64_print_sage(shifts, rdim);
-
-  printf("\n");
-  timeit_t t0;
   
-  nmod_poly_mat_init(first_res, rdim, rdim, prime);
-
   timeit_start(t0);
   M_basis(first_res, first_shifts, mat, sigma, shifts);
   timeit_stop(t0);
   flint_printf("M_basis: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  /** print
-  printf("MBasis matrix representation\n");
-  nmod_poly_mat_print_sage(first_res);
-  printf("shifts result");
-  int64_print_sage(first_shifts, rdim);
-  */
-  if (sigma < 2)
-    {
-      nmod_mat_init(A, rdim, cdim, prime);
-      coefficient_matrix(A, mat, 0);
-      nmod_poly_mat_init(second_res, rdim, rdim, prime);
-      Basis(second_res, second_shifts, A, shifts);
-      printf("\nBasis()\n");
-      nmod_poly_mat_print_sage(second_res);
-      printf("res_shifts basis\n");
-      int64_print_sage(second_shifts, rdim);
-    }
-
-  nmod_poly_mat_init(third_res, rdim, rdim, prime);
-
-  timeit_start(t0);
-  M_basisII(third_res, third_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisII cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  /** print
-  printf("MBasis II  polynomial representation for F_prime and convert P_k into list poly mat\n");
-  nmod_poly_mat_print_sage(third_res);
-  printf("shifts result");
-  int64_print_sage(third_shifts, rdim);
-  */
   
-  nmod_poly_mat_init(fourth_res, rdim, rdim, prime);
+  timeit_start(t0);
+  M_basisII(second_res, second_shifts, mat, sigma, shifts);
+  timeit_stop(t0);
+  flint_printf("M_basisII: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
   timeit_start(t0);
-  M_basisIII(fourth_res, fourth_shifts, mat, sigma, shifts);
+  M_basisIII(third_res, third_shifts, mat, sigma, shifts);
   timeit_stop(t0);
-  flint_printf("M_basisIII cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  /**
-  printf("MBasis polynomial representation for F_prime recalculated for each loop and P_k poly mat\n");
-  nmod_poly_mat_print_sage(fourth_res);
-  printf("shifts result");
-  int64_print_sage(fourth_shifts, rdim);
-  */
-  nmod_poly_mat_init(fifth_res, rdim, rdim, prime);
-
-  timeit_start(t0);
-  M_basisIV(fifth_res, fifth_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisV cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  /**
-  printf("MBasis polynomial representation for F_prime and P_k recalculated for each loop \n");
-  nmod_poly_mat_print_sage(fifth_res);
-  printf("shifts result");
-  int64_print_sage(fifth_shifts, rdim);
-  */
+  flint_printf("M_basisIII: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
   
-  nmod_poly_mat_init(sixth_res, rdim, rdim, prime);
-
-  timeit_start(t0);
-  M_basisV(sixth_res, sixth_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisV cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
-
-  /**
-  printf("MBasis polynomial representation for F_prime and P_k recalculated for each loop \n");
-  nmod_poly_mat_print_sage(sixth_res);
-  printf("shifts result");
-  int64_print_sage(sixth_shifts, rdim);
-  */
-  if (!nmod_poly_mat_equal(first_res, third_res))
-    printf("ERROR not equals m_basis I and II\n");
-
-  if (!nmod_poly_mat_equal(fourth_res, third_res))
-    printf("ERROR not equals m_basis II and III\n");
-
-  if (!nmod_poly_mat_equal(fourth_res, first_res))
-    printf("ERROR not equals m_basis I and III\n");
-
-  if (!nmod_poly_mat_equal(fifth_res, first_res))
-    printf("ERROR not equals m_basis I and IV\n");
   
-  if (!nmod_poly_mat_equal(sixth_res, first_res))
-    printf("ERROR not equals m_basis I and V\n");
+  /** test **/
+  if (!nmod_poly_mat_equal(first_res, second_res))
+    printf("M_basis and M_basisII don't return the same result\n");
 
-  if (!nmod_poly_mat_equal(sixth_res, fifth_res))
-   printf("ERROR not equals m_basis IV and V\n");
- 
+  if (!nmod_poly_mat_equal(third_res, first_res))
+    printf("M_basis and M_basisIII don't return the same result\n");
+  
+  if (!int64_equal(first_shifts, second_shifts, rdim))
+    printf("M_basis and M_basisII don't return the same shifts result\n");
+  
+  if (!int64_equal(first_shifts, third_shifts, rdim))
+    printf("M_basis and M_basisIII don't return the same shifts result\n");
+
+  
+  /** clear **/
+  nmod_poly_mat_clear(mat);
+  nmod_poly_mat_clear(first_res);
+  nmod_poly_mat_clear(second_res);
+  nmod_poly_mat_clear(third_res);
+
+  flint_randclear(state);
   return 0;
 }
 
@@ -192,8 +124,8 @@ int test_nmod_list_poly_mat(void)
   nmod_poly_mat_randtest(mat, state, len);
   nmod_poly_mat_randtest(mat_2, state, len_2);
 
-  nmod_list_poly_mat_init_set(mat_repr, mat, 10);
-  nmod_list_poly_mat_init_set(mat_repr_2, mat_2, 9);
+  nmod_list_poly_mat_init_setII(mat_repr, mat, 10);
+  nmod_list_poly_mat_init_setII(mat_repr_2, mat_2, 9);
 
   nmod_list_poly_mat_to_poly_mat(res, mat_repr);
   nmod_list_poly_mat_to_poly_mat(res_2, mat_repr_2);
@@ -270,7 +202,7 @@ int test_structured_mul_blocks(void)
   nmod_poly_mat_randtest(mat, state, len);
   nmod_poly_mat_set(resid, mat);
   nmod_poly_mat_set(resid_2, mat);
-  nmod_list_poly_mat_init_set(mat_repr, mat, sigma);
+  nmod_list_poly_mat_init_setII(mat_repr, mat, sigma);
 
   
   for (slong i = 0; i < rdim; i++)
