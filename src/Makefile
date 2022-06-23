@@ -34,7 +34,7 @@ left_nullspace.o: left_nullspace.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
 
 clean:
-	@rm -f *~ *.o test 
+	@rm -f *~ *.o test test_m_basis
 help:
 	@echo "Usage:"
 	@echo "  make [all] \t\t Run the whole build of matpol"

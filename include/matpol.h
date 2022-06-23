@@ -35,49 +35,59 @@ typedef enum
   } matrix_wise;
 
 /**
- * \fn void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, int degree)
+ * \fn void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat,
+ *                             int degree)
  * \brief set on res the coefficient matrix of degree degree of mat
  * 
  * if mat = sum_{i = 0}^{k} m_i X^i, then res = m_{degree}
  *
- * \param res a matrix on the same ring as mat and has the same dimensions (empty)
+ * \param res a matrix on the same ring as mat and has the same dimensions
  * \param mat a polynomial matrix 
  * \param degree the degree the user need to study 
  *
  */
-void coefficient_matrix(nmod_mat_t res, const nmod_poly_mat_t mat, slong degree);
+void coefficient_matrix(nmod_mat_t res,
+			const nmod_poly_mat_t mat,
+			slong degree);
 
 /**
- * \fn void column_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
+ * \fn void column_degrees(int64_t *res, const nmod_poly_mat_t mat, 
+ *                         int64_t *shifts)
  * \brief set on res the columns degree of mat with the shifts shifts
  * 
  * if mat = (m_{i,j}) then res = (max_i(m_{i,j}.degree + shifts[i]))_j
  *
- * \param res a pointer of an array of length the number of columns of mat (empty)
+ * \param res a pointer of an array of length the number of columns of mat 
  * \param mat a polynomial matrix 
  * \param shifts a pointer of an array of lenght the number of rows of mat   
  *
  */
-void column_degrees(int64_t *res, const nmod_poly_mat_t mat, const int64_t *shifts);
+void column_degrees(int64_t *res,
+		    const nmod_poly_mat_t mat,
+		    const int64_t *shifts);
 
 /**
- * \fn void row_degrees(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts)
+ * \fn void row_degrees(int64_t *res, const nmod_poly_mat_t mat,
+ *                      int64_t *shifts)
  * \brief Stock on res the rows degree of mat with the shifts shifts
  * 
  * if mat = (m_{i,j}) then res = (max_j(m_{i,j}.degree + shifts[j]))_i
  *
- * \param res a pointer of an array of length the number of columns of mat (empty)
+ * \param res a pointer of an array of length the number of columns of mat 
  * \param mat a polynomial matrix 
  * \param shifts a pointer of an array of lenght the number of columns of mat   
  *
  */
-void row_degrees(int64_t *res, const nmod_poly_mat_t mat, const int64_t *shifts);
+void row_degrees(int64_t *res,
+		 const nmod_poly_mat_t mat,
+		 const int64_t *shifts);
 
 /**
  * \fn slong nmod_poly_mat_degree(const nmod_poly_mat_t mat)
  * \brief Gives the maximal polynomial degree for all the entry of mat
  * 
- * if mat = (m_{i,j}) then res = max(mat.column_degrees()) = max(mat.row_degrees())
+ * if mat = (m_{i,j}) then res = max(mat.column_degrees()) 
+ *                             = max(mat.row_degrees())
  *
  * \param mat a polynomial matrix
  * \return the degree of the matrix mat
@@ -86,14 +96,15 @@ slong nmod_poly_mat_degree(const nmod_poly_mat_t mat);
 
 
 /**
- * \fn void degree_matrix(uint64_t *res, const nmod_poly_mat_t mat, uint64_t *shifts,
- matrix_wise row_wise)
- * \brief Stock on res the degree matrix of mat with the shifts shifts see depending of the matrix_wise
+ * \fn void degree_matrix(int64_t *res, const nmod_poly_mat_t mat,
+ *                        int64_t *shifts, matrix_wise row_wise)
+ * \brief Stock on res the degree matrix of mat with the shifts shifts
+ *        depending of the matrix_wise
  * 
  * if mat = (m_{i,j}) then res = ( degree(m_{i,j}) + shifts[i or j] ) 
  *
  *
- * \param res a pointer on the first value of the degree_matrix which being stock line by line (empty)
+ * \param res a pointer on the first value of the degree_matrix which being stock line by line 
  * \param mat a polynomial matrix 
  * \param shifts a pointer of an array of lenght the number of rows/columns of mat depending of row_wise   
  * \param row_wise gives two options for the shifts
