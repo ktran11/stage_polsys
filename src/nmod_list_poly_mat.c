@@ -142,7 +142,7 @@ void nmod_list_poly_mat_init_setIII(nmod_list_poly_mat_t res,
   cdim = nmod_poly_mat_ncols(F);
   modulus = nmod_poly_mat_modulus(F);
 
-  nmod_list_poly_mat_init(res, degree, degree + length + 1, rdim, cdim, modulus);
+  nmod_list_poly_mat_init(res, degree, degree + length, rdim, cdim, modulus);
 
   nmod_poly_struct *P;
   for (slong i = 0; i < rdim; i++)
@@ -150,7 +150,7 @@ void nmod_list_poly_mat_init_setIII(nmod_list_poly_mat_t res,
       {
 	P = nmod_poly_mat_entry(F, i, j);
 	for (slong k = 0; k <= nmod_poly_degree(P); k++)
-	  nmod_mat_set_entry(res->mat + k, i, j,nmod_poly_get_coeff_ui(P, k));
+	  nmod_mat_set_entry(res->mat + k, i, j, nmod_poly_get_coeff_ui(P, k));
       }
 }
 
@@ -317,7 +317,9 @@ void structured_list_multiplication_blocks_full(nmod_list_poly_mat_t res, const 
   nmod_mat_init(R1_cp, rank, cdim, modulus);
   nmod_mat_init(previous_R1, rank, cdim, modulus);
   nmod_mat_init(R2_cp, rdim - rank, cdim, modulus);
- 	
+
+  res->degree += 1;
+
   for (i = 0; i <= res->degree; i++)
     {
       r_i = res->mat + i;
@@ -339,10 +341,9 @@ void structured_list_multiplication_blocks_full(nmod_list_poly_mat_t res, const 
       nmod_mat_window_clear(R2);
     }
 
-  res-> degree += 1;
   /** apply perm^(-1) **/
   _perm_inv(inv_perm, perm, rdim);
-  for (i = 0; i < res->degree; i++)
+  for (i = 0; i <= res->degree; i++)
     apply_perm_rows_to_matrix(res->mat + i, inv_perm, rdim);
   
   /** clear **/

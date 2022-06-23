@@ -1,9 +1,11 @@
 #include "main.h"
 #include "nmod_list_poly_mat.h"
 #include "m_basis.h"
+#include "pm_basis.h"
 #include "matpol.h"
 #include "basis.h"
 #include "perm_operator.h"
+
 #include <time.h>
 #include <profiler.h>
 
@@ -20,13 +22,51 @@ int int64_equal(int64_t *shifts_1, int64_t *shifts_2, slong length)
   return 1;
 }
 
+int test_pmbasis(void)
+{
+    nmod_poly_mat_t mat, first_res, second_res;
+    slong rdim = 6, cdim = 3, prime = 101 , sigma = 3, len = 3,
+    shifts[rdim], first_shifts[rdim], second_shifts[rdim];
+  flint_rand_t state;
+  
+  /** init **/
+  nmod_poly_mat_init(mat, rdim, cdim, prime);
+  
+  nmod_poly_mat_init(first_res, rdim, rdim, prime);
+  nmod_poly_mat_init(second_res, rdim, rdim, prime);
+  
+  flint_randinit(state);
+  srand(time(NULL));
+  flint_randseed(state, rand(), rand());
+  
+  nmod_poly_mat_randtest(mat, state, len);
+
+  
+  M_basisIV(first_res, first_shifts, mat, sigma, shifts);
+  nmod_poly_mat_print_sage(first_res);
+
+  PM_basis(second_res, second_shifts, mat, sigma, shifts);
+  nmod_poly_mat_print_sage(second_res);
+  
+  
+  if (!nmod_poly_mat_equal(first_res, second_res))
+    printf("M_basis and M_basisIV don't return the same result\n");
+
+  nmod_poly_mat_clear(mat);
+  nmod_poly_mat_clear(first_res);
+  nmod_poly_mat_clear(second_res);
+
+  flint_randclear(state);
+  return 0;
+}
+
 /** Test
  * Verify if all versions of M_Basis give the same results, test time
  */
 int test_mbasis(void)
 {
   nmod_poly_mat_t mat, first_res, second_res, third_res, fourth_res, fifth_res;
-  slong rdim = 52, cdim = 26, prime = 101 , sigma = 32, len = 31,
+  slong rdim = 100, cdim = 50, prime = 101 , sigma = 32, len = 32,
     shifts[rdim], first_shifts[rdim], second_shifts[rdim],
     third_shifts[rdim], fourth_shifts[rdim], fifth_shifts[rdim];
   timeit_t t0;
@@ -46,61 +86,66 @@ int test_mbasis(void)
   flint_randseed(state, rand(), rand());
   
   nmod_poly_mat_randtest(mat, state, len);
-
-  //_perm_randtest(shifts, rdim, state);
-  for (slong i = 0; i < rdim; i++)
-    shifts[i] = 0;
   
-  timeit_start(t0);
-  M_basis(first_res, first_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basis: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+  for (slong i = 0; i < 3; i++)
+    {
+      nmod_poly_mat_randtest(mat, state, len);
+      //_perm_randtest(shifts, rdim, state);
+      for (slong i = 0; i < rdim; i++)
+	shifts[i] = rand() % len - 10;
+      
+      timeit_start(t0);
+      M_basis(first_res, first_shifts, mat, sigma, shifts);
+      timeit_stop(t0);
+      flint_printf("M_basis: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
   
-  timeit_start(t0);
-  M_basisII(second_res, second_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisII: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+      timeit_start(t0);
+      M_basisII(second_res, second_shifts, mat, sigma, shifts);
+      timeit_stop(t0);
+      flint_printf("M_basisII: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
-  timeit_start(t0);
-  M_basisIII(third_res, third_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisIII: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+      timeit_start(t0);
+      M_basisIII(third_res, third_shifts, mat, sigma, shifts);
+      timeit_stop(t0);
+      flint_printf("M_basisIII: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
   
-  timeit_start(t0);
-  M_basisIV(fourth_res, fourth_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisIV: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+      timeit_start(t0);
+      M_basisIV(fourth_res, fourth_shifts, mat, sigma, shifts);
+      timeit_stop(t0);
+      flint_printf("M_basisIV: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
-  timeit_start(t0);
-  M_basisV(fifth_res, fifth_shifts, mat, sigma, shifts);
-  timeit_stop(t0);
-  flint_printf("M_basisV: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
+      timeit_start(t0);
+      M_basisV(fifth_res, fifth_shifts, mat, sigma, shifts);
+      timeit_stop(t0);
+      flint_printf("M_basisV: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
-  /** test **/
-  if (!nmod_poly_mat_equal(first_res, second_res))
-    printf("M_basis and M_basisII don't return the same result\n");
+      /** test **/
+      if (!nmod_poly_mat_equal(first_res, second_res))
+	printf("M_basis and M_basisII don't return the same result\n");
 
-  if (!nmod_poly_mat_equal(third_res, first_res))
-    printf("M_basis and M_basisIII don't return the same result\n");
+      if (!nmod_poly_mat_equal(third_res, first_res))
+	printf("M_basis and M_basisIII don't return the same result\n");
 
-  if (!nmod_poly_mat_equal(fourth_res, first_res))
-    printf("M_basis and M_basisIV don't return the same result\n");
+      if (!nmod_poly_mat_equal(fourth_res, first_res))
+	printf("M_basis and M_basisIV don't return the same result\n");
 
-  if (!nmod_poly_mat_equal(fifth_res, first_res))
-    printf("M_basis and M_basisV don't return the same result\n");
+      if (!nmod_poly_mat_equal(fifth_res, first_res))
+	printf("M_basis and M_basisV don't return the same result\n");
   
-  if (!int64_equal(first_shifts, second_shifts, rdim))
-    printf("M_basis and M_basisII don't return the same shifts result\n");
+      if (!int64_equal(first_shifts, second_shifts, rdim))
+	printf("M_basis and M_basisII don't return the same shifts result\n");
   
-  if (!int64_equal(first_shifts, third_shifts, rdim))
-    printf("M_basis and M_basisIII don't return the same shifts result\n");
+      if (!int64_equal(first_shifts, third_shifts, rdim))
+	printf("M_basis and M_basisIII don't return the same shifts result\n");
 
-  if (!int64_equal(first_shifts, fourth_shifts, rdim))
-    printf("M_basis and M_basisIV don't return the same shifts result\n");
+      if (!int64_equal(first_shifts, fourth_shifts, rdim))
+	printf("M_basis and M_basisIV don't return the same shifts result\n");
 
-  if (!int64_equal(first_shifts, fifth_shifts, rdim))
-    printf("M_basis and M_basisV don't return the same shifts result\n");
+      if (!int64_equal(first_shifts, fifth_shifts, rdim))
+	printf("M_basis and M_basisV don't return the same shifts result\n");
 
+      printf("\n");
+    }
   /** clear **/
   nmod_poly_mat_clear(mat);
   nmod_poly_mat_clear(first_res);
@@ -432,10 +477,11 @@ int test_matpol(void)
 int main(void)
 {
   //test_nmod_list_poly_mat();
-  test_mbasis();
+  // test_mbasis();
   //test_matpol();
   //test_basis();
   //test_structured_mul_blocks();
+  test_pmbasis();
   return EXIT_SUCCESS;
 }
 

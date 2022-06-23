@@ -4,7 +4,7 @@ LDFLAGS = -L/usr/local/lib -lflint -lgmp -lmpfr -lpthread
 
 all: test test_m_basis
 
-test: main.o m_basis.o basis.o matpol.o nmod_list_poly_mat.o perm_operator.o left_nullspace.o
+test: main.o m_basis.o basis.o matpol.o nmod_list_poly_mat.o perm_operator.o left_nullspace.o pm_basis.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 test_m_basis: m_basis_test.o m_basis.o basis.o matpol.o nmod_list_poly_mat.o perm_operator.o left_nullspace.o
@@ -29,6 +29,9 @@ basis.o: basis.c
 
 m_basis.o: m_basis.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
+
+pm_basis.o: pm_basis.c
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $<
 
 left_nullspace.o: left_nullspace.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -c $< 
