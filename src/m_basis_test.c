@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 {
     if (argc!=2 && argc!=4)
     {
-        printf("Usage: %s nbits OR %s nbits sz deg\n",argv[0],argv[0]);
+        printf("Usage: %s nbits OR %s nbits rdim sigma\n",argv[0],argv[0]);
         return 1;
     }
 

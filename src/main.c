@@ -483,11 +483,11 @@ int test_matpol(void)
 int main(void)
 {
   //test_nmod_list_poly_mat();
-  // test_mbasis();
+  test_mbasis();
   //test_matpol();
   //test_basis();
   //test_structured_mul_blocks();
-  test_pmbasis();
+  // test_pmbasis();
   return EXIT_SUCCESS;
 }
 
