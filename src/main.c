@@ -24,11 +24,12 @@ int int64_equal(int64_t *shifts_1, int64_t *shifts_2, slong length)
 
 int test_pmbasis(void)
 {
-    nmod_poly_mat_t mat, first_res, second_res;
-    slong rdim = 6, cdim = 3, prime = 101 , sigma = 3, len = 3,
+  nmod_poly_mat_t mat, first_res, second_res;
+  slong rdim = 200, cdim = 100, prime = 101 , sigma = 80, len = 80,
     shifts[rdim], first_shifts[rdim], second_shifts[rdim];
   flint_rand_t state;
-  
+  timeit_t t0;
+    
   /** init **/
   nmod_poly_mat_init(mat, rdim, cdim, prime);
   
@@ -38,16 +39,21 @@ int test_pmbasis(void)
   flint_randinit(state);
   srand(time(NULL));
   flint_randseed(state, rand(), rand());
+
+  for (slong i = 0; i < rdim; i++)
+    shifts[i] = rand() % 10 - 5;
   
   nmod_poly_mat_randtest(mat, state, len);
-
   
+  timeit_start(t0);
   M_basisIV(first_res, first_shifts, mat, sigma, shifts);
-  nmod_poly_mat_print_sage(first_res);
+  timeit_stop(t0);
+  flint_printf("M_basisIV: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
 
+  timeit_start(t0);
   PM_basis(second_res, second_shifts, mat, sigma, shifts);
-  nmod_poly_mat_print_sage(second_res);
-  
+  timeit_stop(t0);
+  flint_printf("PM_basis: cpu = %wd ms  wall = %wd ms\n", t0->cpu, t0->wall);
   
   if (!nmod_poly_mat_equal(first_res, second_res))
     printf("M_basis and M_basisIV don't return the same result\n");

@@ -21,7 +21,7 @@
 #include <nmod_mat.h>
 #include <nmod_poly_mat.h>
 
-#define INITIAL_CASE_BOUND 1
+#define INITIAL_CASE_BOUND 32
 
 void PM_basis(nmod_poly_mat_t res, int64_t *res_shifts,
 	      const nmod_poly_mat_t F, uint64_t sigma, const int64_t *shifts);
