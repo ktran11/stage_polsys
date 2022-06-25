@@ -86,12 +86,15 @@ void benchmark_nbits(ulong nbits)
     const ulong prime = n_randprime(state, nbits, 0);
     flint_randclear(state);
 
-    slong rdims[] = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
-    slong sigmas[] = { 4, 8, 16, 32 };
+    slong rdims[] = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
+    slong sigmas[] = { 4, 8, 16, 32, 64 };
 
     printf("Bench M Basis\n");
     printf("nbits=%ld, prime=%ld\n", nbits, prime);
     printf("n\trdim\tcdim\torder\tdeg\ttime\n");
+    printf("~~~~WARMUP~~~~\n");
+    benchmark_m_basis(4, 2, 32, 32, 997, state);
+    printf("~~~~WARMUP DONE~~~~\n");
     for (size_t i = 0; i < sizeof(rdims) / sizeof(rdims[0]); ++i)
     {
         long rdim = rdims[i];
